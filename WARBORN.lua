@@ -1,17 +1,32 @@
---// Glue Lfor WARBORN X | by Nouader 🔥 (v3 Fixed: Better Box + Only Players + Top Tracer + TP/Kill)
+-- جلب الساروت من GitHub كـ نص (String)
+local CorrectKey = game:HttpGet("https://raw.githubusercontent.com/hamzanouader8-boop/key/refs/heads/main/key.txt")
+
+-- تنظيف النص من أي فراغات زايدة
+CorrectKey = CorrectKey:gsub("%s+", "")
+
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Window = Rayfield:CreateWindow({
-   Name = "WARBORN X ",
-   LoadingTitle = " WARBORN X",
+   Name = "WARBORN X",
+   LoadingTitle = "WARBORN X",
    LoadingSubtitle = "BY FRIPON",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "WARBORN X",
       FileName = "WARBORN x"
    },
-   KeySystem = false
+   KeySystem = true,
+   KeySettings = {
+      Title = "Warborn System",
+      Subtitle = "Enter your secret key",
+      Note = "Contact Fripon for access",
+      FileName = "Warborn Key",
+      SaveKey = true,
+      GrabKeyFromSite = false,
+      Key = {CorrectKey} -- دابا غيقارن الساروت بشكل صحيح
+   }
 })
 
+-- كمل الكود ديالك عادي من هنا لتحت...
 --// Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
