@@ -499,21 +499,34 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- ====================== NIK & BLOWJOB (KEYBIND VERSION) ======================
+-- =============================================================================
+-- 🔥 ALL IN ONE - FUN TAB CONFIGURATION
+-- =============================================================================
+
+-- 1. تعريف المتغيرات الأساسية (Variables) ف البداية
 local nik_enabled = false
 local bj_enabled = false
 local target_player = nil
+local selected_player = nil
+local spectating = false
+local original_camera_subject = workspace.CurrentCamera.CameraSubject
 
--- Tab Fun (أو ضيفه في HacksTab)
+-- 2. إنشاء الـ Tab الرئيسي
 local FunTab = Window:CreateTab("🔥 Fun")
 
--- 1. Keybind لـ Nik
+-- ==========================================
+-- 🎹 SECTION 1: KEYBINDS (NIK & BJ)
+-- ==========================================
+FunTab:CreateSection("⌨️ Teleport Exploits")
+
+-- Keybind لـ Nik
 FunTab:CreateKeybind({
    Name = "Nik (Keybind + Click Enemy)",
-   CurrentKeybind = "F", -- الساروت الافتراضي (تقدر تبدلو من الـ GUI)
+   CurrentKeybind = "F", -- الساروت الافتراضي
    HoldToInteract = false,
    Info = "Press key to Toggle ON/OFF, then click enemy",
    Callback = function(Keybind)
-      nik_enabled = not nik_enabled -- كايقلب الحالة (إلا كان ON كايولي OFF والعكس)
+      nik_enabled = not nik_enabled
       if not nik_enabled then target_player = nil end
       
       Rayfield:Notify({
@@ -524,14 +537,14 @@ FunTab:CreateKeybind({
    end,
 })
 
--- 2. Keybind لـ Blowjob
+-- Keybind لـ Blowjob
 FunTab:CreateKeybind({
    Name = "Blowjob (Keybind + Click Enemy)",
-   CurrentKeybind = "G", -- الساروت الافتراضي (تقدر تبدلو من الـ GUI)
+   CurrentKeybind = "G", -- الساروت الافتراضي
    HoldToInteract = false,
    Info = "Press key to Toggle ON/OFF, then click enemy",
    Callback = function(Keybind)
-      bj_enabled = not bj_enabled -- كايقلب الحالة
+      bj_enabled = not bj_enabled
       if not bj_enabled then target_player = nil end
       
       Rayfield:Notify({
@@ -542,7 +555,104 @@ FunTab:CreateKeybind({
    end,
 })
 
--- Mouse Click to Select Target
+-- ==========================================
+-- 👥 SECTION 2: PLAYER CONTROL (LIST & BUTTONS)
+-- ==========================================
+FunTab:CreateSection("👥 Player Control Menu")
+
+-- الـ Dropdown لّي غاتطلع فيها الـ List ديال اللعابة
+local PlayerDropdown = FunTab:CreateDropdown({
+   Name = "Select Player",
+   Options = {}, -- غاتعمر باللعابة بوحدها ف الـ Refresh
+   CurrentOption = "",
+   MultipleOptions = false,
+   Callback = function(Option)
+      local target_name = Option[1] or Option
+      selected_player = Players:FindFirstChild(target_name)
+      
+      if selected_player then
+         Rayfield:Notify({Title = "Target Selected", Content = "Now targeting: " .. selected_player.Name, Duration = 2})
+      end
+   end,
+})
+
+-- دالة (Function) باش دير Refresh للـ لّيست د اللعابة
+local function RefreshPlayerList()
+   local player_names = {}
+   for _, plr in ipairs(Players:GetPlayers()) do
+      if plr ~= LocalPlayer then -- باش ما تطلعش سميتك أنت لداخل
+         table.insert(player_names, plr.Name)
+      end
+   end
+   
+   PlayerDropdown:Refresh(player_names, true)
+   Rayfield:Notify({Title = "List Refreshed", Content = "Updated online players list.", Duration = 2})
+end
+
+-- Button ديال Refresh List
+FunTab:CreateButton({
+   Name = "🔄 Refresh Player List",
+   Callback = function()
+      RefreshPlayerList()
+   end,
+})
+
+-- Button ديال Spectate
+FunTab:CreateButton({
+   Name = "👁️ Spectate / Unspectate",
+   Callback = function()
+      if not selected_player then 
+         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2})
+         return 
+      end
+      
+      if spectating then
+         workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+         spectating = false
+         Rayfield:Notify({Title = "Spectate", Content = "Returned to your character", Duration = 2})
+      else
+         if selected_player.Character and selected_player.Character:FindFirstChildOfClass("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = selected_player.Character:FindFirstChildOfClass("Humanoid")
+            spectating = true
+            Rayfield:Notify({Title = "Spectate", Content = "Watching: " .. selected_player.Name, Duration = 2})
+         else
+            Rayfield:Notify({Title = "Error", Content = "Player character or humanoid missing!", Duration = 2})
+         end
+      end
+   end,
+})
+
+-- Button ديال Troll & Kill
+FunTab:CreateButton({
+   Name = "⚡ Troll & Kill Target",
+   Callback = function()
+      if not selected_player then 
+         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2})
+         return 
+      end
+      
+      local targetChar = selected_player.Character
+      if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+         local root = targetChar.HumanoidRootPart
+         
+         if targetChar:FindFirstChildOfClass("Humanoid") then
+            root.Velocity = Vector3.new(0, 500, 0)
+            task.wait(0.2)
+            targetChar:FindFirstChildOfClass("Humanoid").Health = 0
+            
+            Rayfield:Notify({Title = "Troll & Kill", Content = selected_player.Name .. " Has been launched and destroyed!", Duration = 2})
+         end
+      else
+         Rayfield:Notify({Title = "Error", Content = "Target is dead or not spawned yet!", Duration = 2})
+      end
+   end,
+})
+
+-- ==========================================
+-- 🎮 SECTION 3: CORE LOGIC & LOOPS
+-- ==========================================
+
+-- Mouse Click to Select Target (للـ Keybinds)
 LocalPlayer:GetMouse().Button1Down:Connect(function()
    if (nik_enabled or bj_enabled) then
       local mouse = LocalPlayer:GetMouse()
@@ -557,13 +667,14 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end
 end)
 
--- Nik & BJ Logic Loop
+-- Nik & BJ Logic Loop (صحيحة ومعزولة بوحدها)
 RunService.Heartbeat:Connect(function()
    if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
       and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
       
       local myRoot = LocalPlayer.Character.HumanoidRootPart
       local enemyRoot = target_player.Character.HumanoidRootPart
+      
       if nik_enabled then
          myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) -- Behind
       elseif bj_enabled then
@@ -571,113 +682,13 @@ RunService.Heartbeat:Connect(function()
       end
    end
 end)
--- ====================== PLAYER MANAGEMENT & TROLL SYSTEM ======================
-local selected_player = nil
-local spectating = false
-local original_camera_subject = workspace.CurrentCamera.CameraSubject
 
--- غانكريكيو الـ Section لّي غايكون فيها هاد العجب لداخل د الـ FunTab
-local FunTab = Window:CreateTab("🔥 Fun")
-
--- 1. الـ Dropdown لّي غاتطلع فيها الـ List ديال اللعابة
-local PlayerDropdown = FunTab:CreateDropdown({
-   Name = "Select Player",
-   Options = {}, -- غاتعمر باللعابة بوحدها ف الـ Refresh
-   CurrentOption = "",
-   MultipleOptions = false,
-   Callback = function(Option)
-      -- Option هنا كيكون هو الاسم د اللاعب (String)
-      local target_name = Option[1] or Option
-      selected_player = Players:FindFirstChild(target_name)
-      
-      if selected_player then
-         Rayfield:Notify({Title = "Target Selected", Content = "Now targeting: " .. selected_player.Name, Duration = 2})
-      end
-   end,
-})
-
--- دالة (Function) باش دير Refresh للـ لّيست د اللعابة لوسط الـ Dropdown
-local function RefreshPlayerList()
-   local player_names = {}
-   for _, plr in ipairs(Players:GetPlayers()) do
-      if plr ~= LocalPlayer then -- باش ما تطلعش سميتك أنت لداخل
-         table.insert(player_names, plr.Name)
-      end
-   end
-   
-   -- تحديث الـ Options ف الـ Dropdown ديال Rayfield
-   PlayerDropdown:Refresh(player_names, true)
-   Rayfield:Notify({Title = "List Refreshed", Content = "Updated online players list.", Duration = 2})
-end
-
--- 2. Button ديال Refresh List
-FunTab:CreateButton({
-   Name = "🔄 Refresh Player List",
-   Callback = function()
-      RefreshPlayerList()
-   end,
-})
-
--- 3. Button ديال Spectate (كاميرا كادور مع اللاعب)
-FunTab:CreateButton({
-   Name = "👁️ Spectate / Unspectate",
-   Callback = function()
-      if not selected_player then 
-         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2})
-         return 
-      end
-      
-      if spectating then
-         -- كاترّجع الكاميرا لراسك
-         workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-         spectating = false
-         Rayfield:Notify({Title = "Spectate", Content = "Returned to your character", Duration = 2})
-      else
-         -- كادير الكاميرا على اللاعب لّي عزلتيه
-         if selected_player.Character and selected_player.Character:FindFirstChildOfClass("Humanoid") then
-            workspace.CurrentCamera.CameraSubject = selected_player.Character:FindFirstChildOfClass("Humanoid")
-            spectating = true
-            Rayfield:Notify({Title = "Spectate", Content = "Watching: " .. selected_player.Name, Duration = 2})
-         else
-            Rayfield:Notify({Title = "Error", Content = "Player character or humanoid missing!", Duration = 2})
-         end
-      end
-   end,
-})
-
--- 4. Button ديال Troll & Kill (كايطير الـ Enemy لـ السماء ويموت)
-FunTab:CreateButton({
-   Name = "⚡ Troll & Kill Target",
-   Callback = function()
-      if not selected_player then 
-         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2})
-         return 
-      end
-      
-      local targetChar = selected_player.Character
-      if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
-         local root = targetChar.HumanoidRootPart
-         
-         -- Troll & Kill Logic: غانعطيو لـ الـ Character قوة طيرها للسماء والـ Humanoid غايموت بالـ Fall ولا نيشان
-         -- ملاحظة: هاد التخريبقة كاتعتمد على واش الـ Network Ownership عاطياك الحق ولا السيرفر فيه شي Anti-Cheat
-         if targetChar:FindFirstChildOfClass("Humanoid") then
-            -- كادير طرول للـ Velocity باش يتلاح للسماء
-            root.Velocity = Vector3.new(0, 500, 0)
-            
-            -- كادير ليه Kill هاد الكود كايخدم ف الألعاب لّي مافيهمش سكيوريتي قاصحة
-            task.wait(0.2)
-            targetChar:FindFirstChildOfClass("Humanoid").Health = 0
-            
-            Rayfield:Notify({Title = "Troll & Kill", Content = selected_player.Name .. " Has been launched and destroyed!", Duration = 2})
-         end
-      else
-         Rayfield:Notify({Title = "Error", Content = "Target is dead or not spawned yet!", Duration = 2})
-      end
-   end,
-})
-
--- ديماري الـ List أول مرة يشعل السكريبت بوحدها
+-- ديماري الـ List أول مرة يشعل السكريبت تلقائياً
 RefreshPlayerList()
+-- ====================== PLAYER MANAGEMENT & TROLL SYSTEM ======================
+
+
+
 local SettingsTab = Window:CreateTab("⚙ Settings")
 SettingsTab:CreateToggle({Name="Team/Faction Check",CurrentValue=true,Callback=function(v) getgenv().TeamCheck=v end})
 SettingsTab:CreateParagraph({Title="Keys",Content="LeftShift: Speed On/Off | E: Fly On/Off"})
