@@ -499,26 +499,29 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 FULL WORKING CODE - FIX ALL FUNCTIONS & BUTTONS
+-- 👑 ANTI-SMOUD VERSION - WITH NIK SPEED CUSTOMIZER & SEPARATORS
 -- =============================================================================
 
--- 0. استدعاء الـ Services الأساسية للـ لعبة (ضروري باش يخدم كولشي نقي)
+-- 0. استدعاء الـ Services الأساسية
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. تعريف المتغيرات الأساسية (Variables)
+-- 1. المتغيرات الأساسية
 local nik_enabled = false
 local bj_enabled = false
 local target_player = nil
 local selected_player = nil
 local spectating = false
 
--- متغيرات الـ Fly المحسنة
+-- متغيرات الـ Fly
 local fly_enabled = false
-local fly_speed = 50 -- السرعة الافتراضية
+local fly_speed = 50
 local fly_bv = nil
 local fly_bg = nil
+
+-- متغيرات الـ Nik / BJ Speed (Anti-Smoud)
+local nik_follow_speed = 1 -- القيمة الافتراضية للـ لّصقة
 
 -- 2. إنشاء الـ Tab الرئيسي
 local FunTab = Window:CreateTab("🔥 Fun")
@@ -528,12 +531,12 @@ local FunTab = Window:CreateTab("🔥 Fun")
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
--- الـ Keybind باش تشعل وتطفي الـ Fly
+-- الـ Keybind للـ Fly
 FunTab:CreateKeybind({
    Name = "Toggle Fixed Fly",
    CurrentKeybind = "E", 
    HoldToInteract = false,
-   Info = "Fly without falling or sliding when stopping!",
+   Info = "Fly without falling or sliding!",
    Callback = function(Keybind)
       fly_enabled = not fly_enabled
       
@@ -555,7 +558,7 @@ FunTab:CreateKeybind({
          fly_bg.Parent = root
          
          humanoid.PlatformStand = true
-         Rayfield:Notify({Title = "Fly System", Content = "Fly: ON (Stable Mode)", Duration = 2})
+         Rayfield:Notify({Title = "Fly System", Content = "Fly: ON", Duration = 2})
       else
          if fly_bv then fly_bv:Destroy() end
          if fly_bg then fly_bg:Destroy() end
@@ -565,7 +568,7 @@ FunTab:CreateKeybind({
    end,
 })
 
--- 🎚️ الـ Slider باش تزيد السرعة حتى لـ 1000
+-- الـ Slider ديال سرعة الـ Fly
 FunTab:CreateSlider({
    Name = "Fly Speed Customizer",
    Min = 10,
@@ -579,17 +582,17 @@ FunTab:CreateSlider({
    end,
 })
 
--- ➖ الـ Separator (الخط الفاصل)
-FunTab:CreateSection("--------------------------------------------------")
+-- ➖ الـ Separator الأول (عزل الـ Fly)
+FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 -- ==========================================
--- 👥 SECTION: PLAYER CONTROL (LIST & ADVANCED BUTTONS)
+-- 👥 SECTION: PLAYER CONTROL & BRING
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
--- الـ Dropdown لّي غاتطلع فيها الـ List ديال اللعابة
+-- الـ Dropdown ديال اللعابة
 local PlayerDropdown = FunTab:CreateDropdown({
-   Name = "Select Player",
+   Name = "Select Player From List",
    Options = {}, 
    CurrentOption = "",
    MultipleOptions = false,
@@ -602,7 +605,7 @@ local PlayerDropdown = FunTab:CreateDropdown({
    end,
 })
 
--- دالة Refresh للـ لّيست د اللعابة
+-- دالة الـ Refresh
 local function RefreshPlayerList()
    local player_names = {}
    for _, plr in ipairs(Players:GetPlayers()) do
@@ -613,7 +616,7 @@ local function RefreshPlayerList()
    PlayerDropdown:Refresh(player_names, true)
 end
 
--- Button ديال Refresh List
+-- زر Refresh
 FunTab:CreateButton({
    Name = "🔄 Refresh Player List",
    Callback = function() 
@@ -621,7 +624,7 @@ FunTab:CreateButton({
    end,
 })
 
--- Button ديال Spectate
+-- زر Spectate
 FunTab:CreateButton({
    Name = "👁️ Spectate / Unspectate",
    Callback = function()
@@ -642,7 +645,7 @@ FunTab:CreateButton({
    end,
 })
 
--- Button ديال Teleport To Player (أنت كتمشي عندو)
+-- زر Teleport To Player
 FunTab:CreateButton({
    Name = "📍 Teleport To Player",
    Callback = function()
@@ -659,7 +662,7 @@ FunTab:CreateButton({
    end,
 })
 
--- 🧲 Button: Real Tow Player (Bring)
+-- زر Real Tow / Bring
 FunTab:CreateButton({
    Name = "🧲 Real Tow Player (Bring)",
    Callback = function()
@@ -668,15 +671,15 @@ FunTab:CreateButton({
       local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
       
       if myRoot and targetRoot then
-         targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -2)
-         Rayfield:Notify({Title = "Tow System", Content = selected_player.Name .. " brought to you!", Duration = 2})
+         targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
+         Rayfield:Notify({Title = "Bring System", Content = "Brought " .. selected_player.Name .. " to you!", Duration = 2})
       else
          Rayfield:Notify({Title = "Error", Content = "Character or Network ownership missing!", Duration = 2})
       end
    end,
 })
 
--- Button ديال Troll & Flip Smash
+-- زر Troll & Flip Smash
 FunTab:CreateButton({
    Name = "🌪️ Troll & Flip Smash Target",
    Callback = function()
@@ -695,8 +698,11 @@ FunTab:CreateButton({
    end,
 })
 
+-- ➖ الـ Separator الثاني لّي طلبتي (عزل الـ Teleport Exploits والـ Anti-Smoud)
+FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 -- ==========================================
--- ⌨️ SECTION: TELEPORT EXPLOITS (NIK & BJ)
+-- ⌨️ SECTION: TELEPORT EXPLOITS (NIK & BJ) + ANTI-SMOUD
 -- ==========================================
 FunTab:CreateSection("⌨️ Teleport Exploits (Click Mouse on Target)")
 
@@ -724,11 +730,25 @@ FunTab:CreateKeybind({
    end,
 })
 
+-- 🎚️ الـ Slider الجديد: Nik Stick Speed (Anti Smoud)
+FunTab:CreateSlider({
+   Name = "Nik Stick Power (Anti-Smoud)",
+   Min = 1,
+   Max = 100,
+   DefaultValue = 1,
+   Color = Color3.fromRGB(85, 255, 85),
+   Increment = 1,
+   ValueName = "Glue Power",
+   Callback = function(Value)
+      nik_follow_speed = Value
+   end,
+})
+
 -- ==========================================
 -- 🎮 CORE ENGINE & LOOPS
 -- ==========================================
 
--- الـ Loop الخاص بالـ Fly (وقوف تام وثابت ف الهوا عند التوقف)
+-- Loop الـ Fly الثابت
 RunService.RenderStepped:Connect(function()
    if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
       local root = LocalPlayer.Character.HumanoidRootPart
@@ -748,13 +768,13 @@ RunService.RenderStepped:Connect(function()
          if moveDirection.Magnitude > 0 then
             fly_bv.Velocity = moveDirection.Unit * fly_speed
          else
-            fly_bv.Velocity = Vector3.new(0, 0, 0) -- الـ Fix الحقيقي
+            fly_bv.Velocity = Vector3.new(0, 0, 0)
          end
       end
    end
 end)
 
--- Mouse Click Click Target (للـ Nik والـ BJ)
+-- كليك الماوس للاختيار (Nik / BJ)
 LocalPlayer:GetMouse().Button1Down:Connect(function()
    if (nik_enabled or bj_enabled) then
       local mouse = LocalPlayer:GetMouse()
@@ -769,21 +789,30 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end
 end)
 
--- Nik & BJ Logic Loop
+-- 🔄 Loop الـ Nik والـ BJ المحسن والمطحون بالـ Anti-Smoud
 RunService.Heartbeat:Connect(function()
    if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
       and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      
       local myRoot = LocalPlayer.Character.HumanoidRootPart
       local enemyRoot = target_player.Character.HumanoidRootPart
+      
+      -- حساب الـ CFrame المستهدف على حسب المود
+      local targetCFrame = root
       if nik_enabled then
-         myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
+         targetCFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
       elseif bj_enabled then
-         myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
+         targetCFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
+      end
+      
+      -- 💥 الـ Anti-Smoud Logic: كايخلي التليپورت يتكرر ف أجزاء من الثانية (Lerp) على حساب قوة الـ Slider باش تلتصق فيه بزز
+      for i = 1, nik_follow_speed do
+         myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, 1)
       end
    end
 end)
 
--- ديماري الـ List أول مرة تلقائياً
+-- ديماري القائمة تلقائياً ف الأول
 RefreshPlayerList()
 
 
