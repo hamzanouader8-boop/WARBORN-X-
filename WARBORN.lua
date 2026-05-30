@@ -499,7 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 ULTRA-PERFORMANCE VERSION - NO SEPARATORS & LOOP TELEPORT EVERY FRAME
+-- 👑 ULTRA CLEAN VERSION - NO SEPARATORS - FACTIONS FIX - LOOP TELEPORT
 -- =============================================================================
 
 local Players = game:GetService("Players")
@@ -509,31 +509,29 @@ local LocalPlayer = Players.LocalPlayer
 
 local nik_enabled = false
 local bj_enabled = false
-local loop_tp_enabled = false -- المتغير الخاص بالـ Teleport Every Frame
+local loop_tp_enabled = false -- متغير الـ Loop Teleport الجديد
 local target_player = nil
 local selected_player = nil
 local spectating = false
 
--- متغيرات الـ Fly (السرعة ثابثة ف 300)
+-- متغيرات الـ Fly (سرعة ثابتة 300)
 local fly_enabled = false
 local fly_speed = 300
 local fly_bv = nil
 local fly_bg = nil
 
-local nik_smoud_val = 0 
-
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- ✈️ SECTION 1: ANTI-GRAVITY FLY (SPEED 300)
+-- ✈️ SECTION 1: ANTI-GRAVITY FLY
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
 FunTab:CreateKeybind({
-   Name = "Toggle Fixed Fly (Speed 300)",
+   Name = "Toggle Fixed Fly",
    CurrentKeybind = "E", 
    HoldToInteract = false,
-   Info = "Fly without falling or sliding!",
+   Info = "Fly without falling or sliding! Speed: 300",
    Callback = function(Keybind)
       fly_enabled = not fly_enabled
       local char = LocalPlayer.Character
@@ -618,18 +616,25 @@ FunTab:CreateButton({
    end,
 })
 
--- الـ Button الجديد: Teleport Every Frame (حلقة تليپورت مستمرة)
 FunTab:CreateButton({
-   Name = "🔄 Loop Teleport To Target (Every Frame)",
+   Name = "📍 Teleport To Player",
    Callback = function()
       if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
-      loop_tp_enabled = not loop_tp_enabled
-      Rayfield:Notify({Title = "Loop Teleport", Content = loop_tp_enabled and "Loop TP: ON" or "Loop TP: OFF", Duration = 2})
+      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
+      
+      if myRoot and targetRoot then
+         myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
+         Rayfield:Notify({Title = "Teleport", Content = "Teleported to " .. selected_player.Name, Duration = 2})
+      else
+         Rayfield:Notify({Title = "Error", Content = "Target player is not spawned!", Duration = 2})
+      end
    end,
 })
 
+-- 🧲 Button: Real Bring (كايجيبو عندك ف البلاصة لمرة واحدة)
 FunTab:CreateButton({
-   Name = "🧲 Real Tow Player (Bring)",
+   Name = "🧲 Real Bring Player",
    Callback = function()
       if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -637,10 +642,20 @@ FunTab:CreateButton({
       
       if myRoot and targetRoot then
          targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
-         Rayfield:Notify({Title = "Bring System", Content = "Brought " .. selected_player.Name .. " to you!", Duration = 2})
+         Rayfield:Notify({Title = "Bring System", Content = "Brought " .. selected_player.Name, Duration = 2})
       else
-         Rayfield:Notify({Title = "Error", Content = "Character or Network ownership missing!", Duration = 2})
+         Rayfield:Notify({Title = "Error", Content = "Character missing!", Duration = 2})
       end
+   end,
+})
+
+-- 🔄 Button الجديد: Loop Teleport To Player (Every Frame)
+FunTab:CreateButton({
+   Name = "🔄 Loop Bring Player (Every Frame)",
+   Callback = function()
+      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
+      loop_tp_enabled = not loop_tp_enabled
+      Rayfield:Notify({Title = "Loop Teleport", Content = loop_tp_enabled and "ON (Bringing every frame)" or "OFF", Duration = 2})
    end,
 })
 
@@ -663,7 +678,7 @@ FunTab:CreateButton({
 })
 
 -- ==========================================
--- ⌨️ SECTION 3: TELEPORT EXPLOITS & SMOUD
+-- ⌨️ SECTION 3: TELEPORT EXPLOITS
 -- ==========================================
 FunTab:CreateSection("⌨️ Teleport Exploits (Nik / BJ)")
 
@@ -689,24 +704,11 @@ FunTab:CreateKeybind({
    end,
 })
 
-FunTab:CreateSlider({
-   Name = "Nik Smoud Customizer",
-   Min = 0,
-   Max = 10,
-   DefaultValue = 0,
-   Color = Color3.fromRGB(85, 255, 255),
-   Increment = 1,
-   ValueName = "Smoud Level",
-   Callback = function(Value)
-      nik_smoud_val = Value
-   end,
-})
-
 -- ==========================================
--- 🎮 CORE ENGINE & SAFE LOOPS
+-- 🎮 CORE ENGINE & SAFE LOOPS (EVERY FRAME)
 -- ==========================================
 
--- Loop الـ Fly العادي (بسرعة 300)
+-- Loop الـ Fly الثابت بسرعـة 300
 RunService.RenderStepped:Connect(function()
    pcall(function()
       if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -733,19 +735,6 @@ RunService.RenderStepped:Connect(function()
    end)
 end)
 
--- Loop الـ Teleport To Player Every Frame
-RunService.RenderStepped:Connect(function()
-   pcall(function()
-      if loop_tp_enabled and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart") then
-         local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-         local targetRoot = selected_player.Character.HumanoidRootPart
-         if myRoot then
-            myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
-         end
-      end
-   end)
-end)
-
 -- Click للاختيار بالماوس
 LocalPlayer:GetMouse().Button1Down:Connect(function()
    pcall(function()
@@ -763,29 +752,25 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end)
 end)
 
--- Loop الـ Nik والـ BJ مع الـ Smoud Logic
+-- 🔄 الـ Loop الأساسي المشترك للـ Nik والـ BJ والـ Loop Teleport (Every Frame)
 RunService.Heartbeat:Connect(function()
    pcall(function()
-      if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
-         and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-         
-         local myRoot = LocalPlayer.Character.HumanoidRootPart
+      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if not myRoot then return end
+      
+      -- 1. كود الـ Loop Teleport (Every Frame) لجر اللاعب المختار عندك ديما
+      if loop_tp_enabled and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart") then
+         local targetRoot = selected_player.Character.HumanoidRootPart
+         targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
+      end
+      
+      -- 2. كود الـ Nik والـ BJ الأصلي (لاصق مباشر طيارة بلا Smoud)
+      if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart") then
          local enemyRoot = target_player.Character.HumanoidRootPart
-         
-         local targetCFrame = nil
          if nik_enabled then
-            targetCFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
+            myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2)
          elseif bj_enabled then
-            targetCFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
-         end
-         
-         if targetCFrame then
-            if nik_smoud_val == 0 then
-               myRoot.CFrame = targetCFrame
-            else
-               local lerpFactor = 0.4 - ((nik_smoud_val - 1) * 0.038)
-               myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, math.clamp(lerpFactor, 0.05, 0.4))
-            end
+            myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
          end
       end
    end)
