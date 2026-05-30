@@ -499,12 +499,13 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 ANTI-SMOUD VERSION - WITH NIK SPEED CUSTOMIZER & SEPARATORS
+-- 👑 CRASH-PROOF & ANTI-SMOUD VERSION (FIXED FACTIONS & SEPARATORS)
 -- =============================================================================
 
 -- 0. استدعاء الـ Services الأساسية
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 -- 1. المتغيرات الأساسية
@@ -520,18 +521,18 @@ local fly_speed = 50
 local fly_bv = nil
 local fly_bg = nil
 
--- متغيرات الـ Nik / BJ Speed (Anti-Smoud)
-local nik_follow_speed = 1 -- القيمة الافتراضية للـ لّصقة
+-- متغيرات الـ Anti-Smoud
+local nik_follow_speed = 1
 
 -- 2. إنشاء الـ Tab الرئيسي
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- ✈️ SECTION: ADVANCED FLY SYSTEM
+-- ✈️ SECTION 1: ADVANCED FLY SYSTEM
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
--- الـ Keybind للـ Fly
+-- Keybind الـ Fly
 FunTab:CreateKeybind({
    Name = "Toggle Fixed Fly",
    CurrentKeybind = "E", 
@@ -568,7 +569,7 @@ FunTab:CreateKeybind({
    end,
 })
 
--- الـ Slider ديال سرعة الـ Fly
+-- Slider سرعة الـ Fly
 FunTab:CreateSlider({
    Name = "Fly Speed Customizer",
    Min = 10,
@@ -582,15 +583,15 @@ FunTab:CreateSlider({
    end,
 })
 
--- ➖ الـ Separator الأول (عزل الـ Fly)
+-- ➖ Separator 1
 FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 -- ==========================================
--- 👥 SECTION: PLAYER CONTROL & BRING
+-- 👥 SECTION 2: PLAYER CONTROL & BRING
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
--- الـ Dropdown ديال اللعابة
+-- Dropdown اللعابة
 local PlayerDropdown = FunTab:CreateDropdown({
    Name = "Select Player From List",
    Options = {}, 
@@ -698,13 +699,13 @@ FunTab:CreateButton({
    end,
 })
 
--- ➖ الـ Separator الثاني لّي طلبتي (عزل الـ Teleport Exploits والـ Anti-Smoud)
+-- ➖ Separator 2
 FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 -- ==========================================
--- ⌨️ SECTION: TELEPORT EXPLOITS (NIK & BJ) + ANTI-SMOUD
+-- 👥 SECTION 3: TELEPORT EXPLOITS (NIK & BJ)
 -- ==========================================
-FunTab:CreateSection("⌨️ Teleport Exploits (Click Mouse on Target)")
+FunTab:CreateSection("⌨️ Teleport Exploits")
 
 -- Keybind لـ Nik
 FunTab:CreateKeybind({
@@ -730,7 +731,7 @@ FunTab:CreateKeybind({
    end,
 })
 
--- 🎚️ الـ Slider الجديد: Nik Stick Speed (Anti Smoud)
+-- Slider الـ Anti-Smoud
 FunTab:CreateSlider({
    Name = "Nik Stick Power (Anti-Smoud)",
    Min = 1,
@@ -745,71 +746,76 @@ FunTab:CreateSlider({
 })
 
 -- ==========================================
--- 🎮 CORE ENGINE & LOOPS
+-- 🎮 SAFE CORE ENGINE & LOOPS (UNDER PROTECTION)
 -- ==========================================
 
--- Loop الـ Fly الثابت
+-- 1. Loop الـ Fly المحمي بـ pcall
 RunService.RenderStepped:Connect(function()
-   if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-      local root = LocalPlayer.Character.HumanoidRootPart
-      local camera = workspace.CurrentCamera
-      local moveDirection = Vector3.new(0, 0, 0)
-      
-      local UserInputService = game:GetService("UserInputService")
-      if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
-      if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
-      
-      if fly_bv and fly_bg then
-         fly_bg.CFrame = camera.CFrame
-         if moveDirection.Magnitude > 0 then
-            fly_bv.Velocity = moveDirection.Unit * fly_speed
-         else
-            fly_bv.Velocity = Vector3.new(0, 0, 0)
+   pcall(function()
+      if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+         local root = LocalPlayer.Character.HumanoidRootPart
+         local camera = workspace.CurrentCamera
+         local moveDirection = Vector3.new(0, 0, 0)
+         
+         if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
+         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
+         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
+         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
+         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
+         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
+         
+         if fly_bv and fly_bg then
+            fly_bg.CFrame = camera.CFrame
+            if moveDirection.Magnitude > 0 then
+               fly_bv.Velocity = moveDirection.Unit * fly_speed
+            else
+               fly_bv.Velocity = Vector3.new(0, 0, 0)
+            end
          end
       end
-   end
+   end)
 end)
 
--- كليك الماوس للاختيار (Nik / BJ)
+-- 2. كليك الماوس المحمي للاختيار
 LocalPlayer:GetMouse().Button1Down:Connect(function()
-   if (nik_enabled or bj_enabled) then
-      local mouse = LocalPlayer:GetMouse()
-      if mouse.Target then
-         local character = mouse.Target.Parent
-         local plr = Players:GetPlayerFromCharacter(character)
-         if plr and plr ~= LocalPlayer then
-            target_player = plr
-            Rayfield:Notify({Title = "Target Selected", Content = plr.Name, Duration = 2})
+   pcall(function()
+      if (nik_enabled or bj_enabled) then
+         local mouse = LocalPlayer:GetMouse()
+         if mouse.Target then
+            local character = mouse.Target.Parent
+            local plr = Players:GetPlayerFromCharacter(character)
+            if plr and plr ~= LocalPlayer then
+               target_player = plr
+               Rayfield:Notify({Title = "Target Selected", Content = plr.Name, Duration = 2})
+            end
          end
       end
-   end
+   end)
 end)
 
--- 🔄 Loop الـ Nik والـ BJ المحسن والمطحون بالـ Anti-Smoud
+-- 3. Loop الـ Nik والـ BJ المحمي والمطحون بالـ Anti-Smoud
 RunService.Heartbeat:Connect(function()
-   if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
-      and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-      
-      local myRoot = LocalPlayer.Character.HumanoidRootPart
-      local enemyRoot = target_player.Character.HumanoidRootPart
-      
-      -- حساب الـ CFrame المستهدف على حسب المود
-      local targetCFrame = root
-      if nik_enabled then
-         targetCFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
-      elseif bj_enabled then
-         targetCFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
+   pcall(function()
+      if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
+         and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+         
+         local myRoot = LocalPlayer.Character.HumanoidRootPart
+         local enemyRoot = target_player.Character.HumanoidRootPart
+         
+         local targetCFrame = nil
+         if nik_enabled then
+            targetCFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
+         elseif bj_enabled then
+            targetCFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
+         end
+         
+         if targetCFrame then
+            for i = 1, nik_follow_speed do
+               myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, 1)
+            end
+         end
       end
-      
-      -- 💥 الـ Anti-Smoud Logic: كايخلي التليپورت يتكرر ف أجزاء من الثانية (Lerp) على حساب قوة الـ Slider باش تلتصق فيه بزز
-      for i = 1, nik_follow_speed do
-         myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, 1)
-      end
-   end
+   end)
 end)
 
 -- ديماري القائمة تلقائياً ف الأول
