@@ -499,7 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 🔥 ALL IN ONE - FUN TAB CONFIGURATION (WITH FLY FIX & TELEPORT)
+-- 🔥 ALL IN ONE - FUN TAB CONFIGURATION (ULTIMATE VERSION)
 -- =============================================================================
 
 -- 1. تعريف المتغيرات الأساسية (Variables)
@@ -512,7 +512,7 @@ local original_camera_subject = workspace.CurrentCamera.CameraSubject
 
 -- متغيرات الـ Fly المحسنة
 local fly_enabled = false
-local fly_speed = 50
+local fly_speed = 50 -- السرعة الافتراضية، وغايدير ليها الـ Slider تحديث
 local fly_bv = nil
 local fly_bg = nil
 
@@ -520,13 +520,14 @@ local fly_bg = nil
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- ✈️ SECTION 0: ADVANCED FLY SYSTEM (FIXED)
+-- ✈️ SECTION 0: ADVANCED FLY SYSTEM
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
+-- Keybind لـ Toggle Fly
 FunTab:CreateKeybind({
    Name = "Toggle Fixed Fly",
-   CurrentKeybind = "E", -- الساروت باش تشعل وتطفي الـ Fly
+   CurrentKeybind = "E", 
    HoldToInteract = false,
    Info = "Fly without falling or sliding when stopping!",
    Callback = function(Keybind)
@@ -539,7 +540,6 @@ FunTab:CreateKeybind({
       if not root or not humanoid then return end
       
       if fly_enabled then
-         -- كاري الـ Forces باش نتحكمو ف الجاذبية
          fly_bv = Instance.new("BodyVelocity")
          fly_bv.MaxForce = Vector3.new(1e7, 1e7, 1e7)
          fly_bv.Velocity = Vector3.new(0, 0, 0)
@@ -550,10 +550,9 @@ FunTab:CreateKeybind({
          fly_bg.CFrame = root.CFrame
          fly_bg.Parent = root
          
-         humanoid.PlatformStand = true -- باش السكين ما يبقاش يدير أنيماسيون د الطياح
+         humanoid.PlatformStand = true
          Rayfield:Notify({Title = "Fly System", Content = "Fly: ON (Stable Mode)", Duration = 2})
       else
-         -- تنظيف ملي كالتطفي الـ Fly
          if fly_bv then fly_bv:Destroy() end
          if fly_bg then fly_bg:Destroy() end
          humanoid.PlatformStand = false
@@ -562,14 +561,26 @@ FunTab:CreateKeybind({
    end,
 })
 
--- الـ Loop الخاص بالـ Fly باش يخليك واقف ف السماء إلا ما تحركتيش
+-- 🛠️ الـ Slider الجديد للتحكم ف السرعة حتال 1000 Speed
+FunTab:CreateSlider({
+   Name = "🚀 Fly Speed",
+   Info = "Adjust your flying speed up to 1000",
+   Increment = 10,
+   Min = 10,
+   Max = 1000,
+   CurrentValue = 50,
+   Callback = function(Value)
+      fly_speed = Value
+   end,
+})
+
+-- الـ Loop الخاص بالـ Fly
 RunService.RenderStepped:Connect(function()
    if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
       local root = LocalPlayer.Character.HumanoidRootPart
       local camera = workspace.CurrentCamera
       local moveDirection = Vector3.new(0, 0, 0)
       
-      -- تشييك على السوارت د التحراك د اللعبة
       local UserInputService = game:GetService("UserInputService")
       if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
       if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
@@ -581,11 +592,10 @@ RunService.RenderStepped:Connect(function()
       if fly_bv and fly_bg then
          fly_bg.CFrame = camera.CFrame
          
-         -- 🛠️ هادا هو الـ FIX: إلا كان اللاعب ما كايبرك على والو، الـ Velocity كاتولي 0 وبلاصة وااااقف مشدودة ف السماء!
          if moveDirection.Magnitude > 0 then
             fly_bv.Velocity = moveDirection.Unit * fly_speed
          else
-            fly_bv.Velocity = Vector3.new(0, 0, 0) -- حبس ف البلاصة بحال الأرضية
+            fly_bv.Velocity = Vector3.new(0, 0, 0) -- الفيكس: حبس ف البلاصة
          end
       end
    end
@@ -655,7 +665,7 @@ end
 FunTab:CreateButton({
    Name = "🔄 Refresh Player List",
    Callback = function() RefreshPlayerList() end,
-})
+ })
 
 -- Button ديال Spectate
 FunTab:CreateButton({
@@ -674,24 +684,38 @@ FunTab:CreateButton({
    end,
 })
 
--- 🚀 الـ Button الجديد: Teleport To Player (تحت الـ Spectate نيشان)
+-- Button ديال Teleport To Player
 FunTab:CreateButton({
    Name = "📍 Teleport To Player",
    Callback = function()
-      if not selected_player then 
-         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2}) 
-         return 
-      end
-      
+      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2}) return end
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
       local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
       
       if myRoot and targetRoot then
-         -- كايجيبك نيشان فوق منو بـ 3 د السنتيمترات باش ما تتبلوكاوش وسط بعضياتكم
          myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
          Rayfield:Notify({Title = "Teleport", Content = "Teleported to " .. selected_player.Name, Duration = 2})
       else
-         Rayfield:Notify({Title = "Error", Content = "Target player is not spawned or too far!", Duration = 2})
+         Rayfield:Notify({Title = "Error", Content = "Target player character missing!", Duration = 2})
+      end
+   end,
+})
+
+-- 🧲 الـ Button الجديد: Real Bring Player (Real Tow)
+FunTab:CreateButton({
+   Name = "🧲 Real Tow Player (Bring Target)",
+   Info = "Brings the selected player right in front of you!",
+   Callback = function()
+      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2}) return end
+      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
+      
+      if myRoot and targetRoot then
+         -- كايجيب اللاعب لعندك ويحطو قدامك بـ 3 سونتيمترات
+         targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
+         Rayfield:Notify({Title = "Real Tow", Content = selected_player.Name .. " brought to you!", Duration = 2})
+      else
+         Rayfield:Notify({Title = "Error", Content = "Cannot bring player, network ownership or character missing!", Duration = 2})
       end
    end,
 })
