@@ -498,9 +498,7 @@ HacksTab:CreateSlider({
    CurrentValue = 0.7,
    Callback = function(v) _G.HitboxTransparency = v end
 })
--- ضيف هاد الكود **بعد** Rayfield Window creation (بعد سطر Window:CreateWindow)
-
--- ====================== NIK & BLOWJOB ======================
+-- ====================== NIK & BLOWJOB (KEYBIND VERSION) ======================
 local nik_enabled = false
 local bj_enabled = false
 local target_player = nil
@@ -508,24 +506,40 @@ local target_player = nil
 -- Tab Fun (أو ضيفه في HacksTab)
 local FunTab = Window:CreateTab("🔥 Fun")
 
-FunTab:CreateToggle({
-   Name = "Nik (Click Enemy)",
-   CurrentValue = false,
-   Callback = function(Value)
-      nik_enabled = Value
-      if not Value then target_player = nil end
-      Rayfield:Notify({Title = "Nik", Content = Value and "ON - Click on Enemy" or "OFF", Duration = 2})
-   end
+-- 1. Keybind لـ Nik
+FunTab:CreateKeybind({
+   Name = "Nik (Keybind + Click Enemy)",
+   CurrentKeybind = "F", -- الساروت الافتراضي (تقدر تبدلو من الـ GUI)
+   HoldToInteract = false,
+   Info = "Press key to Toggle ON/OFF, then click enemy",
+   Callback = function(Keybind)
+      nik_enabled = not nik_enabled -- كايقلب الحالة (إلا كان ON كايولي OFF والعكس)
+      if not nik_enabled then target_player = nil end
+      
+      Rayfield:Notify({
+         Title = "Nik Mode", 
+         Content = nik_enabled and "ON - Click on Enemy" or "OFF", 
+         Duration = 2
+      })
+   end,
 })
 
-FunTab:CreateToggle({
-   Name = "Blowjob (Click Enemy)",
-   CurrentValue = false,
-   Callback = function(Value)
-      bj_enabled = Value
-      if not Value then target_player = nil end
-      Rayfield:Notify({Title = "Blowjob", Content = Value and "ON - Click on Enemy" or "OFF", Duration = 2})
-   end
+-- 2. Keybind لـ Blowjob
+FunTab:CreateKeybind({
+   Name = "Blowjob (Keybind + Click Enemy)",
+   CurrentKeybind = "G", -- الساروت الافتراضي (تقدر تبدلو من الـ GUI)
+   HoldToInteract = false,
+   Info = "Press key to Toggle ON/OFF, then click enemy",
+   Callback = function(Keybind)
+      bj_enabled = not bj_enabled -- كايقلب الحالة
+      if not bj_enabled then target_player = nil end
+      
+      Rayfield:Notify({
+         Title = "Blowjob Mode", 
+         Content = bj_enabled and "ON - Click on Enemy" or "OFF", 
+         Duration = 2
+      })
+   end,
 })
 
 -- Mouse Click to Select Target
@@ -545,14 +559,13 @@ end)
 
 -- Nik & BJ Logic Loop
 RunService.Heartbeat:Connect(function()
-   if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart") 
+   if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
       and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
       
       local myRoot = LocalPlayer.Character.HumanoidRootPart
       local enemyRoot = target_player.Character.HumanoidRootPart
-
       if nik_enabled then
-         myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2)  -- Behind
+         myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) -- Behind
       elseif bj_enabled then
          myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
       end
