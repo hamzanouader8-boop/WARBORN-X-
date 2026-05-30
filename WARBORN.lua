@@ -445,7 +445,7 @@ local function KillAllEnemies()
 end
 
 --// UI
-local AimbotTab = Window:CreateTab("🎯 Aimbot (TZX Mobile V2)")
+local AimbotTab = Window:CreateTab("🎯 Aimbot)")
 AimbotTab:CreateToggle({Name="Enable Aimbot",CurrentValue=false,Callback=function(v) getgenv().AimbotEnabled=v end})
 AimbotTab:CreateToggle({Name="Visibility Check",CurrentValue=true,Callback=function(v) getgenv().VisibilityCheck=v end})
 AimbotTab:CreateSection("Mobile TZX Auto-Lock")
