@@ -499,7 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 ULTRA CLEAN VERSION - NO SEPARATORS - FIXED FACTIONS - FLY 300 SPEED
+-- 👑 ULTRA-PERFORMANCE VERSION - NO SEPARATORS & LOOP TELEPORT EVERY FRAME
 -- =============================================================================
 
 local Players = game:GetService("Players")
@@ -509,17 +509,17 @@ local LocalPlayer = Players.LocalPlayer
 
 local nik_enabled = false
 local bj_enabled = false
+local loop_tp_enabled = false -- المتغير الخاص بالـ Teleport Every Frame
 local target_player = nil
 local selected_player = nil
 local spectating = false
 
--- متغيرات الـ Fly (السرعة ثابتة ف 300)
+-- متغيرات الـ Fly (السرعة ثابثة ف 300)
 local fly_enabled = false
 local fly_speed = 300
 local fly_bv = nil
 local fly_bg = nil
 
--- متغير الـ Smoud (0 = لاصق نيشان، 1-10 = Smoud)
 local nik_smoud_val = 0 
 
 local FunTab = Window:CreateTab("🔥 Fun")
@@ -533,7 +533,7 @@ FunTab:CreateKeybind({
    Name = "Toggle Fixed Fly (Speed 300)",
    CurrentKeybind = "E", 
    HoldToInteract = false,
-   Info = "Fly at 300 Speed without sliding!",
+   Info = "Fly without falling or sliding!",
    Callback = function(Keybind)
       fly_enabled = not fly_enabled
       local char = LocalPlayer.Character
@@ -565,7 +565,7 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 👥 SECTION 2: PLAYER CONTROL & REAL BRING
+-- 👥 SECTION 2: PLAYER CONTROL & BRING
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
@@ -618,25 +618,18 @@ FunTab:CreateButton({
    end,
 })
 
+-- الـ Button الجديد: Teleport Every Frame (حلقة تليپورت مستمرة)
 FunTab:CreateButton({
-   Name = "📍 Teleport To Player",
+   Name = "🔄 Loop Teleport To Target (Every Frame)",
    Callback = function()
       if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
-      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
-      
-      if myRoot and targetRoot then
-         myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
-         Rayfield:Notify({Title = "Teleport", Content = "Teleported to " .. selected_player.Name, Duration = 2})
-      else
-         Rayfield:Notify({Title = "Error", Content = "Target player is not spawned!", Duration = 2})
-      end
+      loop_tp_enabled = not loop_tp_enabled
+      Rayfield:Notify({Title = "Loop Teleport", Content = loop_tp_enabled and "Loop TP: ON" or "Loop TP: OFF", Duration = 2})
    end,
 })
 
--- 🧲 الـ Real Bring الحقيقي والمضمون
 FunTab:CreateButton({
-   Name = "🧲 Real Bring Player",
+   Name = "🧲 Real Tow Player (Bring)",
    Callback = function()
       if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -646,7 +639,7 @@ FunTab:CreateButton({
          targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
          Rayfield:Notify({Title = "Bring System", Content = "Brought " .. selected_player.Name .. " to you!", Duration = 2})
       else
-         Rayfield:Notify({Title = "Error", Content = "Character missing or client restricted!", Duration = 2})
+         Rayfield:Notify({Title = "Error", Content = "Character or Network ownership missing!", Duration = 2})
       end
    end,
 })
@@ -696,7 +689,6 @@ FunTab:CreateKeybind({
    end,
 })
 
--- Slider الـ Smoud (0 = لاصق ، 1 لـ 10 = متابعة سلسة)
 FunTab:CreateSlider({
    Name = "Nik Smoud Customizer",
    Min = 0,
@@ -711,14 +703,14 @@ FunTab:CreateSlider({
 })
 
 -- ==========================================
--- 🎮 LIGHTWEIGHT & SAFE CORE LOOPS (NO CRASH)
+-- 🎮 CORE ENGINE & SAFE LOOPS
 -- ==========================================
 
--- Loop الـ Fly النقي والسريع (Speed 300)
+-- Loop الـ Fly العادي (بسرعة 300)
 RunService.RenderStepped:Connect(function()
-   if fly_enabled and LocalPlayer.Character then
-      local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-      if root and fly_bv and fly_bg then
+   pcall(function()
+      if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+         local root = LocalPlayer.Character.HumanoidRootPart
          local camera = workspace.CurrentCamera
          local moveDirection = Vector3.new(0, 0, 0)
          
@@ -729,37 +721,57 @@ RunService.RenderStepped:Connect(function()
          if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
          if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
          
-         fly_bg.CFrame = camera.CFrame
-         if moveDirection.Magnitude > 0 then
-            fly_bv.Velocity = moveDirection.Unit * fly_speed
-         else
-            fly_bv.Velocity = Vector3.new(0, 0, 0)
+         if fly_bv and fly_bg then
+            fly_bg.CFrame = camera.CFrame
+            if moveDirection.Magnitude > 0 then
+               fly_bv.Velocity = moveDirection.Unit * fly_speed
+            else
+               fly_bv.Velocity = Vector3.new(0, 0, 0)
+            end
          end
       end
-   end
+   end)
 end)
 
--- Click بالماوس للاختيار
+-- Loop الـ Teleport To Player Every Frame
+RunService.RenderStepped:Connect(function()
+   pcall(function()
+      if loop_tp_enabled and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart") then
+         local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+         local targetRoot = selected_player.Character.HumanoidRootPart
+         if myRoot then
+            myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
+         end
+      end
+   end)
+end)
+
+-- Click للاختيار بالماوس
 LocalPlayer:GetMouse().Button1Down:Connect(function()
-   if (nik_enabled or bj_enabled) then
-      local mouse = LocalPlayer:GetMouse()
-      if mouse.Target and mouse.Target.Parent then
-         local plr = Players:GetPlayerFromCharacter(mouse.Target.Parent)
-         if plr and plr ~= LocalPlayer then
-            target_player = plr
-            Rayfield:Notify({Title = "Target Selected", Content = plr.Name, Duration = 2})
+   pcall(function()
+      if (nik_enabled or bj_enabled) then
+         local mouse = LocalPlayer:GetMouse()
+         if mouse.Target then
+            local character = mouse.Target.Parent
+            local plr = Players:GetPlayerFromCharacter(character)
+            if plr and plr ~= LocalPlayer then
+               target_player = plr
+               Rayfield:Notify({Title = "Target Selected", Content = plr.Name, Duration = 2})
+            end
          end
       end
-   end
+   end)
 end)
 
--- Loop الـ Nik والـ BJ السلس والآمن 100%
+-- Loop الـ Nik والـ BJ مع الـ Smoud Logic
 RunService.Heartbeat:Connect(function()
-   if (nik_enabled or bj_enabled) and target_player and target_player.Character and LocalPlayer.Character then
-      local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-      local enemyRoot = target_player.Character:FindFirstChild("HumanoidRootPart")
-      
-      if myRoot and enemyRoot then
+   pcall(function()
+      if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
+         and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+         
+         local myRoot = LocalPlayer.Character.HumanoidRootPart
+         local enemyRoot = target_player.Character.HumanoidRootPart
+         
          local targetCFrame = nil
          if nik_enabled then
             targetCFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
@@ -776,7 +788,7 @@ RunService.Heartbeat:Connect(function()
             end
          end
       end
-   end
+   end)
 end)
 
 RefreshPlayerList()
