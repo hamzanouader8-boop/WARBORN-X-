@@ -499,40 +499,36 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 CRASH-PROOF & ANTI-SMOUD VERSION (FIXED FACTIONS & SEPARATORS)
+-- 👑 PERFECT ANTI-SMOUD VERSION (0 = GLUED / 1-10 = SMOOTH FOLLOW)
 -- =============================================================================
 
--- 0. استدعاء الـ Services الأساسية
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. المتغيرات الأساسية
 local nik_enabled = false
 local bj_enabled = false
 local target_player = nil
 local selected_player = nil
 local spectating = false
 
--- متغيرات الـ Fly
+-- متغيرات الـ Fly (بدون ستايدر السرعة)
 local fly_enabled = false
 local fly_speed = 50
 local fly_bv = nil
 local fly_bg = nil
 
--- متغيرات الـ Anti-Smoud
-local nik_follow_speed = 1
+-- متغير الـ Smoud الجديد (0 تعني لصقة كاملة، ومن 1 لـ 10 تعني متابعة سلسة)
+local nik_smoud_val = 0 
 
--- 2. إنشاء الـ Tab الرئيسي
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- ✈️ SECTION 1: ADVANCED FLY SYSTEM
+-- ✈️ SECTION 1: ANTI-GRAVITY FLY
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
--- Keybind الـ Fly
 FunTab:CreateKeybind({
    Name = "Toggle Fixed Fly",
    CurrentKeybind = "E", 
@@ -540,7 +536,6 @@ FunTab:CreateKeybind({
    Info = "Fly without falling or sliding!",
    Callback = function(Keybind)
       fly_enabled = not fly_enabled
-      
       local char = LocalPlayer.Character
       local root = char and char:FindFirstChild("HumanoidRootPart")
       local humanoid = char and char:FindFirstChildOfClass("Humanoid")
@@ -569,29 +564,11 @@ FunTab:CreateKeybind({
    end,
 })
 
--- Slider سرعة الـ Fly
-FunTab:CreateSlider({
-   Name = "Fly Speed Customizer",
-   Min = 10,
-   Max = 1000,
-   DefaultValue = 50,
-   Color = Color3.fromRGB(255, 85, 85),
-   Increment = 5,
-   ValueName = "Speed",
-   Callback = function(Value)
-      fly_speed = Value
-   end,
-})
-
--- ➖ Separator 1
-FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
 -- ==========================================
 -- 👥 SECTION 2: PLAYER CONTROL & BRING
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
--- Dropdown اللعابة
 local PlayerDropdown = FunTab:CreateDropdown({
    Name = "Select Player From List",
    Options = {}, 
@@ -606,7 +583,6 @@ local PlayerDropdown = FunTab:CreateDropdown({
    end,
 })
 
--- دالة الـ Refresh
 local function RefreshPlayerList()
    local player_names = {}
    for _, plr in ipairs(Players:GetPlayers()) do
@@ -617,15 +593,11 @@ local function RefreshPlayerList()
    PlayerDropdown:Refresh(player_names, true)
 end
 
--- زر Refresh
 FunTab:CreateButton({
    Name = "🔄 Refresh Player List",
-   Callback = function() 
-      RefreshPlayerList() 
-   end,
+   Callback = function() RefreshPlayerList() end,
 })
 
--- زر Spectate
 FunTab:CreateButton({
    Name = "👁️ Spectate / Unspectate",
    Callback = function()
@@ -646,7 +618,6 @@ FunTab:CreateButton({
    end,
 })
 
--- زر Teleport To Player
 FunTab:CreateButton({
    Name = "📍 Teleport To Player",
    Callback = function()
@@ -663,7 +634,6 @@ FunTab:CreateButton({
    end,
 })
 
--- زر Real Tow / Bring
 FunTab:CreateButton({
    Name = "🧲 Real Tow Player (Bring)",
    Callback = function()
@@ -680,7 +650,6 @@ FunTab:CreateButton({
    end,
 })
 
--- زر Troll & Flip Smash
 FunTab:CreateButton({
    Name = "🌪️ Troll & Flip Smash Target",
    Callback = function()
@@ -699,15 +668,14 @@ FunTab:CreateButton({
    end,
 })
 
--- ➖ Separator 2
+-- ➖ الـ Separator الوحيد لّي خليت (خاص بـ الـ Nik و الـ Smoud)
 FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 -- ==========================================
--- 👥 SECTION 3: TELEPORT EXPLOITS (NIK & BJ)
+-- ⌨️ SECTION 3: TELEPORT EXPLOITS & SMOUD
 -- ==========================================
-FunTab:CreateSection("⌨️ Teleport Exploits")
+FunTab:CreateSection("⌨️ Teleport Exploits (Nik / BJ)")
 
--- Keybind لـ Nik
 FunTab:CreateKeybind({
    Name = "Nik (Keybind)",
    CurrentKeybind = "F", 
@@ -719,7 +687,6 @@ FunTab:CreateKeybind({
    end,
 })
 
--- Keybind لـ Blowjob
 FunTab:CreateKeybind({
    Name = "Blowjob (Keybind)",
    CurrentKeybind = "G", 
@@ -731,25 +698,25 @@ FunTab:CreateKeybind({
    end,
 })
 
--- Slider الـ Anti-Smoud
+-- 🎚️ الـ Slider المحسّن: من 0 لـ 10 (0 = لاصق لّصقة وحدة / 1 لـ 10 = متابعة سلسة)
 FunTab:CreateSlider({
-   Name = "Nik Stick Power (Anti-Smoud)",
-   Min = 1,
-   Max = 100,
-   DefaultValue = 1,
-   Color = Color3.fromRGB(85, 255, 85),
+   Name = "Nik Smoud Customizer",
+   Min = 0,
+   Max = 10,
+   DefaultValue = 0,
+   Color = Color3.fromRGB(85, 255, 255),
    Increment = 1,
-   ValueName = "Glue Power",
+   ValueName = "Smoud Level",
    Callback = function(Value)
-      nik_follow_speed = Value
+      nik_smoud_val = Value
    end,
 })
 
 -- ==========================================
--- 🎮 SAFE CORE ENGINE & LOOPS (UNDER PROTECTION)
+-- 🎮 CORE ENGINE & SAFE LOOPS
 -- ==========================================
 
--- 1. Loop الـ Fly المحمي بـ pcall
+-- Loop الـ Fly العادي
 RunService.RenderStepped:Connect(function()
    pcall(function()
       if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -776,7 +743,7 @@ RunService.RenderStepped:Connect(function()
    end)
 end)
 
--- 2. كليك الماوس المحمي للاختيار
+-- Click للاختيار بالماوس
 LocalPlayer:GetMouse().Button1Down:Connect(function()
    pcall(function()
       if (nik_enabled or bj_enabled) then
@@ -793,7 +760,7 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end)
 end)
 
--- 3. Loop الـ Nik والـ BJ المحمي والمطحون بالـ Anti-Smoud
+-- 🔄 الـ Loop الذكي د الـ Nik والـ BJ مع الـ Smoud Logic الجديد
 RunService.Heartbeat:Connect(function()
    pcall(function()
       if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
@@ -810,15 +777,20 @@ RunService.Heartbeat:Connect(function()
          end
          
          if targetCFrame then
-            for i = 1, nik_follow_speed do
-               myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, 1)
+            if nik_smoud_val == 0 then
+               -- 0 = لاصق طيارة ف البلاصة بلا Lerp ثقيل
+               myRoot.CFrame = targetCFrame
+            else
+               -- من 1 لـ 10 = كيبان تابعو بـ Smoud (كل ما كبر الـ رقم، كل ما زاد الـ Smoud الموزون)
+               -- تحويل القيمة لنسبة مئوية مابين 0.05 و 0.4 باش تعطي تأثير سلس للعين
+               local lerpFactor = 0.4 - ((nik_smoud_val - 1) * 0.038)
+               myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, math.clamp(lerpFactor, 0.05, 0.4))
             end
          end
       end
    end)
 end)
 
--- ديماري القائمة تلقائياً ف الأول
 RefreshPlayerList()
 
 
