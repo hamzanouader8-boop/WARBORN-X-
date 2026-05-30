@@ -499,10 +499,10 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 🔥 FULL WORKING - ALL IN ONE FUN TAB BY GEMINI
+-- 🔥 ALL IN ONE - FUN TAB CONFIGURATION (WITH FLY FIX & TELEPORT)
 -- =============================================================================
 
--- 1. تعريف المتغيرات الأساسية (Variables) ف البداية
+-- 1. تعريف المتغيرات الأساسية (Variables)
 local nik_enabled = false
 local bj_enabled = false
 local target_player = nil
@@ -512,7 +512,7 @@ local original_camera_subject = workspace.CurrentCamera.CameraSubject
 
 -- متغيرات الـ Fly المحسنة
 local fly_enabled = false
-local fly_speed = 50 -- السرعة الافتراضية، وغاتحكم فيها من الـ Slider دابا
+local fly_speed = 50
 local fly_bv = nil
 local fly_bg = nil
 
@@ -520,14 +520,13 @@ local fly_bg = nil
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- ✈️ SECTION: ADVANCED FLY SYSTEM
+-- ✈️ SECTION 0: ADVANCED FLY SYSTEM (FIXED)
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
--- الـ Keybind باش تشعل وتطفي الـ Fly
 FunTab:CreateKeybind({
    Name = "Toggle Fixed Fly",
-   CurrentKeybind = "E", 
+   CurrentKeybind = "E", -- الساروت باش تشعل وتطفي الـ Fly
    HoldToInteract = false,
    Info = "Fly without falling or sliding when stopping!",
    Callback = function(Keybind)
@@ -540,6 +539,7 @@ FunTab:CreateKeybind({
       if not root or not humanoid then return end
       
       if fly_enabled then
+         -- كاري الـ Forces باش نتحكمو ف الجاذبية
          fly_bv = Instance.new("BodyVelocity")
          fly_bv.MaxForce = Vector3.new(1e7, 1e7, 1e7)
          fly_bv.Velocity = Vector3.new(0, 0, 0)
@@ -550,9 +550,10 @@ FunTab:CreateKeybind({
          fly_bg.CFrame = root.CFrame
          fly_bg.Parent = root
          
-         humanoid.PlatformStand = true
+         humanoid.PlatformStand = true -- باش السكين ما يبقاش يدير أنيماسيون د الطياح
          Rayfield:Notify({Title = "Fly System", Content = "Fly: ON (Stable Mode)", Duration = 2})
       else
+         -- تنظيف ملي كالتطفي الـ Fly
          if fly_bv then fly_bv:Destroy() end
          if fly_bg then fly_bg:Destroy() end
          humanoid.PlatformStand = false
@@ -561,25 +562,66 @@ FunTab:CreateKeybind({
    end,
 })
 
--- 🎚️ الـ Slider باش تزيد السرعة حتى لـ 1000
-FunTab:CreateSlider({
-   Name = "Fly Speed Customizer",
-   Min = 10,
-   Max = 1000,
-   DefaultValue = 50,
-   Color = Color3.fromRGB(255, 85, 85),
-   Increment = 5,
-   ValueName = "Speed",
-   Callback = function(Value)
-      fly_speed = Value
+-- الـ Loop الخاص بالـ Fly باش يخليك واقف ف السماء إلا ما تحركتيش
+RunService.RenderStepped:Connect(function()
+   if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      local root = LocalPlayer.Character.HumanoidRootPart
+      local camera = workspace.CurrentCamera
+      local moveDirection = Vector3.new(0, 0, 0)
+      
+      -- تشييك على السوارت د التحراك د اللعبة
+      local UserInputService = game:GetService("UserInputService")
+      if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
+      if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
+      if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
+      if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
+      if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
+      if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
+      
+      if fly_bv and fly_bg then
+         fly_bg.CFrame = camera.CFrame
+         
+         -- 🛠️ هادا هو الـ FIX: إلا كان اللاعب ما كايبرك على والو، الـ Velocity كاتولي 0 وبلاصة وااااقف مشدودة ف السماء!
+         if moveDirection.Magnitude > 0 then
+            fly_bv.Velocity = moveDirection.Unit * fly_speed
+         else
+            fly_bv.Velocity = Vector3.new(0, 0, 0) -- حبس ف البلاصة بحال الأرضية
+         end
+      end
+   end
+end)
+
+-- ==========================================
+-- 🎹 SECTION 1: KEYBINDS (NIK & BJ)
+-- ==========================================
+FunTab:CreateSection("⌨️ Teleport Exploits")
+
+-- Keybind لـ Nik
+FunTab:CreateKeybind({
+   Name = "Nik (Keybind + Click Enemy)",
+   CurrentKeybind = "F", 
+   HoldToInteract = false,
+   Callback = function(Keybind)
+      nik_enabled = not nik_enabled
+      if not nik_enabled then target_player = nil end
+      Rayfield:Notify({Title = "Nik Mode", Content = nik_enabled and "ON" or "OFF", Duration = 2})
    end,
 })
 
--- ➖ هادا هو الـ Separator (الخط الفاصل) لّي طلبتي باش يفصل الـ Fly على اللعابة
-FunTab:CreateSection("--------------------------------------------------")
+-- Keybind لـ Blowjob
+FunTab:CreateKeybind({
+   Name = "Blowjob (Keybind + Click Enemy)",
+   CurrentKeybind = "G", 
+   HoldToInteract = false,
+   Callback = function(Keybind)
+      bj_enabled = not bj_enabled
+      if not bj_enabled then target_player = nil end
+      Rayfield:Notify({Title = "Blowjob Mode", Content = bj_enabled and "ON" or "OFF", Duration = 2})
+   end,
+})
 
 -- ==========================================
--- 👥 SECTION: PLAYER CONTROL (LIST & ADVANCED BUTTONS)
+-- 👥 SECTION 2: PLAYER CONTROL (LIST & BUTTONS)
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
@@ -623,48 +665,33 @@ FunTab:CreateButton({
       if spectating then
          workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
          spectating = false
-         Rayfield:Notify({Title = "Spectate", Content = "Stopped spectating.", Duration = 2})
       else
          if selected_player.Character and selected_player.Character:FindFirstChildOfClass("Humanoid") then
             workspace.CurrentCamera.CameraSubject = selected_player.Character:FindFirstChildOfClass("Humanoid")
             spectating = true
-            Rayfield:Notify({Title = "Spectate", Content = "Watching: " .. selected_player.Name, Duration = 2})
          end
       end
    end,
 })
 
--- Button ديال Teleport To Player (أنت كتمشي عندو)
+-- 🚀 الـ Button الجديد: Teleport To Player (تحت الـ Spectate نيشان)
 FunTab:CreateButton({
    Name = "📍 Teleport To Player",
    Callback = function()
-      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
+      if not selected_player then 
+         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2}) 
+         return 
+      end
+      
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
       local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
       
       if myRoot and targetRoot then
+         -- كايجيبك نيشان فوق منو بـ 3 د السنتيمترات باش ما تتبلوكاوش وسط بعضياتكم
          myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
          Rayfield:Notify({Title = "Teleport", Content = "Teleported to " .. selected_player.Name, Duration = 2})
       else
-         Rayfield:Notify({Title = "Error", Content = "Target player is not spawned!", Duration = 2})
-      end
-   end,
-})
-
--- 🧲 الـ Button الجديد: Real Tow Player / Bring Player (هو كايجي عندك)
-FunTab:CreateButton({
-   Name = "🧲 Real Tow Player (Bring)",
-   Callback = function()
-      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
-      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
-      
-      if myRoot and targetRoot then
-         -- كايجر الـ Character ديالو ويحطها قدامك نيشان بـ 2 خطوات
-         targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -2)
-         Rayfield:Notify({Title = "Tow System", Content = selected_player.Name .. " has been brought to you!", Duration = 2})
-      else
-         Rayfield:Notify({Title = "Error", Content = "Could not bring player. Network Ownership or character missing!", Duration = 2})
+         Rayfield:Notify({Title = "Error", Content = "Target player is not spawned or too far!", Duration = 2})
       end
    end,
 })
@@ -683,71 +710,15 @@ FunTab:CreateButton({
             task.wait(0.4)
             if root then root.Velocity = Vector3.new(0, -800, 0) end
          end)
-         Rayfield:Notify({Title = "Flip Smash", Content = "Smashed " .. selected_player.Name, Duration = 2})
       end
    end,
 })
 
 -- ==========================================
--- ⌨️ SECTION: TELEPORT EXPLOITS (NIK & BJ)
--- ==========================================
-FunTab:CreateSection("⌨️ Teleport Exploits (Click Mouse on Target)")
-
--- Keybind لـ Nik
-FunTab:CreateKeybind({
-   Name = "Nik (Keybind)",
-   CurrentKeybind = "F", 
-   HoldToInteract = false,
-   Callback = function(Keybind)
-      nik_enabled = not nik_enabled
-      if not nik_enabled then target_player = nil end
-      Rayfield:Notify({Title = "Nik Mode", Content = nik_enabled and "ON" or "OFF", Duration = 2})
-   end,
-})
-
--- Keybind لـ Blowjob
-FunTab:CreateKeybind({
-   Name = "Blowjob (Keybind)",
-   CurrentKeybind = "G", 
-   HoldToInteract = false,
-   Callback = function(Keybind)
-      bj_enabled = not bj_enabled
-      if not bj_enabled then target_player = nil end
-      Rayfield:Notify({Title = "Blowjob Mode", Content = bj_enabled and "ON" or "OFF", Duration = 2})
-   end,
-})
-
--- ==========================================
--- 🎮 CORE ENGINE & LOOPS
+-- 🎮 SECTION 3: CORE LOGIC & LOOPS
 -- ==========================================
 
--- الـ Loop الخاص بالـ Fly باش يثبتك ف السماء إلا وقفتي والـ Speed كايتحدث لايف
-RunService.RenderStepped:Connect(function()
-   if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-      local root = LocalPlayer.Character.HumanoidRootPart
-      local camera = workspace.CurrentCamera
-      local moveDirection = Vector3.new(0, 0, 0)
-      
-      local UserInputService = game:GetService("UserInputService")
-      if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDirection = moveDirection + camera.CFrame.LookVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDirection = moveDirection - camera.CFrame.LookVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDirection = moveDirection - camera.CFrame.RightVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDirection = moveDirection + camera.CFrame.RightVector end
-      if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
-      if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
-      
-      if fly_bv and fly_bg then
-         fly_bg.CFrame = camera.CFrame
-         if moveDirection.Magnitude > 0 then
-            fly_bv.Velocity = moveDirection.Unit * fly_speed -- كايخدم بالـ Speed لّي ف الـ Slider نيشان
-         else
-            fly_bv.Velocity = Vector3.new(0, 0, 0) -- الـ Fix: وقوف تام ف السماء بلا زلاڭات!
-         end
-      end
-   end
-end)
-
--- Mouse Click to Select Target (للـ Keybinds د الـ Nik والـ BJ)
+-- Mouse Click to Select Target (للـ Keybinds)
 LocalPlayer:GetMouse().Button1Down:Connect(function()
    if (nik_enabled or bj_enabled) then
       local mouse = LocalPlayer:GetMouse()
