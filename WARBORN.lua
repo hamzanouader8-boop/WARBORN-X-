@@ -499,7 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 🔥 ALL IN ONE - FUN TAB CONFIGURATION (UPDATED WITH FLIP & SMASH)
+-- 🔥 ALL IN ONE - FUN TAB CONFIGURATION (UPDATED WITH FIX FLY & TELEPORT)
 -- =============================================================================
 
 -- 1. تعريف المتغيرات الأساسية (Variables) ف البداية
@@ -510,11 +510,46 @@ local selected_player = nil
 local spectating = false
 local original_camera_subject = workspace.CurrentCamera.CameraSubject
 
+-- متغيرات الـ Fly المطور
+local fly_enabled = false
+local fly_speed = 50
+local UserInputService = game:GetService("UserInputService")
+
 -- 2. إنشاء الـ Tab الرئيسي
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- 🎹 SECTION 1: KEYBINDS (NIK & BJ)
+-- ✈️ NEW SECTION: FIX FLY SYSTEM
+-- ==========================================
+FunTab:CreateSection("✈️ Advanced Fly System")
+
+-- Keybind لـ تشغيل وإطفاء الـ Fly
+FunTab:CreateKeybind({
+   Name = "Toggle Fly (Fix Position)",
+   CurrentKeybind = "E", -- تقدر تبدلو من الـ Menu كيف ديما
+   HoldToInteract = false,
+   Info = "Press to Fly. When you stop moving, you will FREEZE in the air!",
+   Callback = function(Keybind)
+      fly_enabled = not fly_enabled
+      
+      local character = LocalPlayer.Character
+      local root = character and character:FindFirstChild("HumanoidRootPart")
+      local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+      
+      if not fly_enabled then
+         -- ملي نطفيو الـ Fly نرجعو كولشي عادي
+         if humanoid then humanoid.PlatformStand = false end
+         if root then root.Velocity = Vector3.new(0, 0, 0) end
+         Rayfield:Notify({Title = "Fly System", Content = "Fly: OFF", Duration = 2})
+      else
+         if humanoid then humanoid.PlatformStand = true end
+         Rayfield:Notify({Title = "Fly System", Content = "Fly: ON (Stop moving = Freeze in air)", Duration = 2})
+      end
+   end,
+})
+
+-- ==========================================
+-- 🎹 SECTION 2: KEYBINDS (NIK & BJ)
 -- ==========================================
 FunTab:CreateSection("⌨️ Teleport Exploits")
 
@@ -555,7 +590,7 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 👥 SECTION 2: PLAYER CONTROL (LIST & BUTTONS)
+-- 👥 SECTION 3: PLAYER CONTROL (LIST & BUTTONS)
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
@@ -621,7 +656,29 @@ FunTab:CreateButton({
    end,
 })
 
--- 🛠️ الـ Button الجديد: Troll & Flip Smash
+-- 📍 Button الجديد: Teleport to Player (تحت الـ Spectate نيشان)
+FunTab:CreateButton({
+   Name = "📍 Teleport to Player",
+   Callback = function()
+      if not selected_player then
+         Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2})
+         return
+      end
+      
+      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
+      
+      if myRoot and targetRoot then
+         -- كيتيلي بورتي لراسك فوقو بـ 2 خطوات باش ماتغرقش فالأرض معاه
+         myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 2, 0)
+         Rayfield:Notify({Title = "Teleported", Content = "Teleported to " .. selected_player.Name, Duration = 2})
+      else
+         Rayfield:Notify({Title = "Error", Content = "Target or your character is missing RootPart!", Duration = 2})
+      end
+   end,
+})
+
+-- Button ديال Troll & Flip Smash
 FunTab:CreateButton({
    Name = "🌪️ Troll & Flip Smash Target",
    Callback = function()
@@ -634,13 +691,9 @@ FunTab:CreateButton({
       if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
          local root = targetChar.HumanoidRootPart
          
-         -- 🚀 هنا الخدمة: كاين طيروه بـ Velocity خيالية لفوق
          root.Velocity = Vector3.new(0, 600, 0)
-         
-         -- 🔄 ونقلبوه (Flip) بـ AngularVelocity باش يدور ف السماء ويتردخ
          root.RotVelocity = Vector3.new(math.random(100, 300), math.random(100, 300), math.random(100, 300))
          
-         -- 💥 نزيدو نردخوه للأرض بـ قوة هابطة من بعد 0.4 ثانية وهو ف السماء
          task.spawn(function()
             task.wait(0.4)
             if root then
@@ -660,7 +713,7 @@ FunTab:CreateButton({
 })
 
 -- ==========================================
--- 🎮 SECTION 3: CORE LOGIC & LOOPS
+-- 🎮 SECTION 4: CORE LOGIC & LOOPS
 -- ==========================================
 
 -- Mouse Click to Select Target (للـ Keybinds)
@@ -678,12 +731,57 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end
 end)
 
--- Nik & BJ Logic Loop
+-- الـ Loop الموحد (Heartbeat) لـ تحركات الـ Fly والـ Exploits الأخرى
 RunService.Heartbeat:Connect(function()
-   if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
-      and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+   local character = LocalPlayer.Character
+   local myRoot = character and character:FindFirstChild("HumanoidRootPart")
+   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+   
+   if not myRoot then return end
+   
+   -- 1. الفيكس والموف ديال الـ Fly (Fix Fly Logic)
+   if fly_enabled then
+      local camera = workspace.CurrentCamera
+      local moveDirection = Vector3.new(0, 0, 0)
+      local moving = false
       
-      local myRoot = LocalPlayer.Character.HumanoidRootPart
+      -- تشيك واش بارك على شي زر د التحراك
+      if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+         moveDirection = moveDirection + camera.CFrame.LookVector
+         moving = true
+      end
+      if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+         moveDirection = moveDirection - camera.CFrame.LookVector
+         moving = true
+      end
+      if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+         moveDirection = moveDirection - camera.CFrame.RightVector
+         moving = true
+      end
+      if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+         moveDirection = moveDirection + camera.CFrame.RightVector
+         moving = true
+      end
+      if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+         moveDirection = moveDirection + Vector3.new(0, 1, 0)
+         moving = true
+      end
+      if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+         moveDirection = moveDirection - Vector3.new(0, 1, 0)
+         moving = true
+      end
+      
+      if moving then
+         -- إلا كان كايتحرك، كنعطيو Velocity على حساب فين كايشوف
+         myRoot.Velocity = moveDirection.Unit * fly_speed
+      else
+         -- 🔥 هادا هو الـ FIX: إلا ما كانش كايتحرك، كاينسمروه (STOP) ف البلاصة 0 ف الـ Velocity باش ما يهبطش كاع!
+         myRoot.Velocity = Vector3.new(0, 0, 0)
+      end
+   end
+   
+   -- 2. الـ Logic د الـ Nik والـ BJ العادية
+   if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart") then
       local enemyRoot = target_player.Character.HumanoidRootPart
       
       if nik_enabled then
