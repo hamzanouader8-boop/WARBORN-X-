@@ -499,8 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- =============================================================================
--- 👑 ULTRA CLEAN VERSION - NO SEPARATORS - FACTIONS FIX - LOOP TELEPORT TO PLAYER
+-- 👑 ULTRA CLEAN VERSION - FACTIONS FIXED - LOOP TELEPORT TO PLAYER (EVERY FRAME)
 -- =============================================================================
 
 local Players = game:GetService("Players")
@@ -510,7 +509,7 @@ local LocalPlayer = Players.LocalPlayer
 
 local nik_enabled = false
 local bj_enabled = false
-local loop_tp_to_player = false -- المتغير الصحيح دابا: أنت كتمشي عندو كل فريم
+local loop_tp_to_player = false -- المتغير ديال Loop Teleport الجديد
 local target_player = nil
 local selected_player = nil
 local spectating = false
@@ -534,13 +533,12 @@ FunTab:CreateKeybind({
    HoldToInteract = false,
    Info = "Fly without falling or sliding! Speed: 300",
    Callback = function(Keybind)
+      fly_enabled = not fly_enabled
       local char = LocalPlayer.Character
       local root = char and char:FindFirstChild("HumanoidRootPart")
       local humanoid = char and char:FindFirstChildOfClass("Humanoid")
       
       if not root or not humanoid then return end
-      
-      fly_enabled = not fly_enabled
       
       if fly_enabled then
          fly_bv = Instance.new("BodyVelocity")
@@ -565,7 +563,7 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 👥 SECTION 2: PLAYER CONTROL & BRING
+-- 👥 SECTION 2: PLAYER CONTROL
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
@@ -634,30 +632,13 @@ FunTab:CreateButton({
    end,
 })
 
--- 🔄 الـ Button الصحيح دابا: Loop Teleport To Player (أنت كتلصق فيه كل فريم)
+-- 🔄 الـ Button الجديد: Loop Teleport To Player (أنت كاتبقى تطير وتليپورت عندو ف كل فريم)
 FunTab:CreateButton({
    Name = "🔄 Loop Teleport To Player (Every Frame)",
    Callback = function()
       if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
       loop_tp_to_player = not loop_tp_to_player
-      Rayfield:Notify({Title = "Loop Teleport", Content = loop_tp_to_player and "ON (Teleporting to him every frame)" or "OFF", Duration = 2})
-   end,
-})
-
--- 🧲 Real Bring Player (هو كايجي عندك لمرة واحدة)
-FunTab:CreateButton({
-   Name = "🧲 Real Bring Player",
-   Callback = function()
-      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
-      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
-      
-      if myRoot and targetRoot then
-         targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
-         Rayfield:Notify({Title = "Bring System", Content = "Brought " .. selected_player.Name, Duration = 2})
-      else
-         Rayfield:Notify({Title = "Error", Content = "Character missing!", Duration = 2})
-      end
+      Rayfield:Notify({Title = "Loop Teleport", Content = loop_tp_to_player and "ON (Teleporting every frame)" or "OFF", Duration = 2})
    end,
 })
 
@@ -754,7 +735,7 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end)
 end)
 
--- 🔄 الـ Loop الأساسي المشترك للـ Nik والـ BJ والـ Loop Teleport To Player (Every Frame)
+-- 🔄 الـ Loop الأساسي المشترك (Every Frame)
 RunService.Heartbeat:Connect(function()
    pcall(function()
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
