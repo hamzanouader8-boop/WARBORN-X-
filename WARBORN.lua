@@ -498,9 +498,8 @@ HacksTab:CreateSlider({
    CurrentValue = 0.7,
    Callback = function(v) _G.HitboxTransparency = v end
 })
--- ====================== NIK & BLOWJOB (KEYBIND VERSION) ======================
 -- =============================================================================
--- 🔥 ALL IN ONE - FUN TAB CONFIGURATION
+-- 🔥 ALL IN ONE - FUN TAB CONFIGURATION (UPDATED WITH FLIP & SMASH)
 -- =============================================================================
 
 -- 1. تعريف المتغيرات الأساسية (Variables) ف البداية
@@ -522,7 +521,7 @@ FunTab:CreateSection("⌨️ Teleport Exploits")
 -- Keybind لـ Nik
 FunTab:CreateKeybind({
    Name = "Nik (Keybind + Click Enemy)",
-   CurrentKeybind = "F", -- الساروت الافتراضي
+   CurrentKeybind = "F", 
    HoldToInteract = false,
    Info = "Press key to Toggle ON/OFF, then click enemy",
    Callback = function(Keybind)
@@ -540,7 +539,7 @@ FunTab:CreateKeybind({
 -- Keybind لـ Blowjob
 FunTab:CreateKeybind({
    Name = "Blowjob (Keybind + Click Enemy)",
-   CurrentKeybind = "G", -- الساروت الافتراضي
+   CurrentKeybind = "G", 
    HoldToInteract = false,
    Info = "Press key to Toggle ON/OFF, then click enemy",
    Callback = function(Keybind)
@@ -563,7 +562,7 @@ FunTab:CreateSection("👥 Player Control Menu")
 -- الـ Dropdown لّي غاتطلع فيها الـ List ديال اللعابة
 local PlayerDropdown = FunTab:CreateDropdown({
    Name = "Select Player",
-   Options = {}, -- غاتعمر باللعابة بوحدها ف الـ Refresh
+   Options = {}, 
    CurrentOption = "",
    MultipleOptions = false,
    Callback = function(Option)
@@ -580,7 +579,7 @@ local PlayerDropdown = FunTab:CreateDropdown({
 local function RefreshPlayerList()
    local player_names = {}
    for _, plr in ipairs(Players:GetPlayers()) do
-      if plr ~= LocalPlayer then -- باش ما تطلعش سميتك أنت لداخل
+      if plr ~= LocalPlayer then 
          table.insert(player_names, plr.Name)
       end
    end
@@ -622,9 +621,9 @@ FunTab:CreateButton({
    end,
 })
 
--- Button ديال Troll & Kill
+-- 🛠️ الـ Button الجديد: Troll & Flip Smash
 FunTab:CreateButton({
-   Name = "⚡ Troll & Kill Target",
+   Name = "🌪️ Troll & Flip Smash Target",
    Callback = function()
       if not selected_player then 
          Rayfield:Notify({Title = "Error", Content = "Please select a player first!", Duration = 2})
@@ -635,15 +634,27 @@ FunTab:CreateButton({
       if targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
          local root = targetChar.HumanoidRootPart
          
-         if targetChar:FindFirstChildOfClass("Humanoid") then
-            root.Velocity = Vector3.new(0, 500, 0)
-            task.wait(0.2)
-            targetChar:FindFirstChildOfClass("Humanoid").Health = 0
-            
-            Rayfield:Notify({Title = "Troll & Kill", Content = selected_player.Name .. " Has been launched and destroyed!", Duration = 2})
-         end
+         -- 🚀 هنا الخدمة: كاين طيروه بـ Velocity خيالية لفوق
+         root.Velocity = Vector3.new(0, 600, 0)
+         
+         -- 🔄 ونقلبوه (Flip) بـ AngularVelocity باش يدور ف السماء ويتردخ
+         root.RotVelocity = Vector3.new(math.random(100, 300), math.random(100, 300), math.random(100, 300))
+         
+         -- 💥 نزيدو نردخوه للأرض بـ قوة هابطة من بعد 0.4 ثانية وهو ف السماء
+         task.spawn(function()
+            task.wait(0.4)
+            if root then
+               root.Velocity = Vector3.new(0, -800, 0)
+            end
+         end)
+         
+         Rayfield:Notify({
+            Title = "Flip Smash", 
+            Content = selected_player.Name .. " launched, flipped, and smashed to the ground!", 
+            Duration = 3
+         })
       else
-         Rayfield:Notify({Title = "Error", Content = "Target is dead or not spawned yet!", Duration = 2})
+         Rayfield:Notify({Title = "Error", Content = "Target is dead, not spawned, or too far!", Duration = 2})
       end
    end,
 })
@@ -667,7 +678,7 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end
 end)
 
--- Nik & BJ Logic Loop (صحيحة ومعزولة بوحدها)
+-- Nik & BJ Logic Loop
 RunService.Heartbeat:Connect(function()
    if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
       and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -676,7 +687,7 @@ RunService.Heartbeat:Connect(function()
       local enemyRoot = target_player.Character.HumanoidRootPart
       
       if nik_enabled then
-         myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) -- Behind
+         myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
       elseif bj_enabled then
          myRoot.CFrame = enemyRoot.CFrame * CFrame.new(0, -0.6, -1.0) * CFrame.Angles(math.rad(-10), math.rad(180), 0)
       end
@@ -685,7 +696,6 @@ end)
 
 -- ديماري الـ List أول مرة يشعل السكريبت تلقائياً
 RefreshPlayerList()
--- ====================== PLAYER MANAGEMENT & TROLL SYSTEM ======================
 
 
 
