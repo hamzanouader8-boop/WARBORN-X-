@@ -499,7 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 PERFECT ANTI-SMOUD VERSION (0 = GLUED / 1-10 = SMOOTH FOLLOW)
+-- 👑 ULTRA CLEAN VERSION - NO SEPARATORS - FIXED FACTIONS - FLY 300 SPEED
 -- =============================================================================
 
 local Players = game:GetService("Players")
@@ -513,27 +513,27 @@ local target_player = nil
 local selected_player = nil
 local spectating = false
 
--- متغيرات الـ Fly (بدون ستايدر السرعة)
+-- متغيرات الـ Fly (السرعة ثابتة ف 300)
 local fly_enabled = false
-local fly_speed = 50
+local fly_speed = 300
 local fly_bv = nil
 local fly_bg = nil
 
--- متغير الـ Smoud الجديد (0 تعني لصقة كاملة، ومن 1 لـ 10 تعني متابعة سلسة)
+-- متغير الـ Smoud (0 = لاصق نيشان، 1-10 = Smoud)
 local nik_smoud_val = 0 
 
 local FunTab = Window:CreateTab("🔥 Fun")
 
 -- ==========================================
--- ✈️ SECTION 1: ANTI-GRAVITY FLY
+-- ✈️ SECTION 1: ANTI-GRAVITY FLY (SPEED 300)
 -- ==========================================
 FunTab:CreateSection("✈️ Anti-Gravity Fly")
 
 FunTab:CreateKeybind({
-   Name = "Toggle Fixed Fly",
+   Name = "Toggle Fixed Fly (Speed 300)",
    CurrentKeybind = "E", 
    HoldToInteract = false,
-   Info = "Fly without falling or sliding!",
+   Info = "Fly at 300 Speed without sliding!",
    Callback = function(Keybind)
       fly_enabled = not fly_enabled
       local char = LocalPlayer.Character
@@ -554,7 +554,7 @@ FunTab:CreateKeybind({
          fly_bg.Parent = root
          
          humanoid.PlatformStand = true
-         Rayfield:Notify({Title = "Fly System", Content = "Fly: ON", Duration = 2})
+         Rayfield:Notify({Title = "Fly System", Content = "Fly: ON (Speed 300)", Duration = 2})
       else
          if fly_bv then fly_bv:Destroy() end
          if fly_bg then fly_bg:Destroy() end
@@ -565,7 +565,7 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 👥 SECTION 2: PLAYER CONTROL & BRING
+-- 👥 SECTION 2: PLAYER CONTROL & REAL BRING
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
@@ -634,8 +634,9 @@ FunTab:CreateButton({
    end,
 })
 
+-- 🧲 الـ Real Bring الحقيقي والمضمون
 FunTab:CreateButton({
-   Name = "🧲 Real Tow Player (Bring)",
+   Name = "🧲 Real Bring Player",
    Callback = function()
       if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -645,7 +646,7 @@ FunTab:CreateButton({
          targetRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3)
          Rayfield:Notify({Title = "Bring System", Content = "Brought " .. selected_player.Name .. " to you!", Duration = 2})
       else
-         Rayfield:Notify({Title = "Error", Content = "Character or Network ownership missing!", Duration = 2})
+         Rayfield:Notify({Title = "Error", Content = "Character missing or client restricted!", Duration = 2})
       end
    end,
 })
@@ -667,9 +668,6 @@ FunTab:CreateButton({
       end
    end,
 })
-
--- ➖ الـ Separator الوحيد لّي خليت (خاص بـ الـ Nik و الـ Smoud)
-FunTab:CreateSection("━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 -- ==========================================
 -- ⌨️ SECTION 3: TELEPORT EXPLOITS & SMOUD
@@ -698,7 +696,7 @@ FunTab:CreateKeybind({
    end,
 })
 
--- 🎚️ الـ Slider المحسّن: من 0 لـ 10 (0 = لاصق لّصقة وحدة / 1 لـ 10 = متابعة سلسة)
+-- Slider الـ Smoud (0 = لاصق ، 1 لـ 10 = متابعة سلسة)
 FunTab:CreateSlider({
    Name = "Nik Smoud Customizer",
    Min = 0,
@@ -713,14 +711,14 @@ FunTab:CreateSlider({
 })
 
 -- ==========================================
--- 🎮 CORE ENGINE & SAFE LOOPS
+-- 🎮 LIGHTWEIGHT & SAFE CORE LOOPS (NO CRASH)
 -- ==========================================
 
--- Loop الـ Fly العادي
+-- Loop الـ Fly النقي والسريع (Speed 300)
 RunService.RenderStepped:Connect(function()
-   pcall(function()
-      if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-         local root = LocalPlayer.Character.HumanoidRootPart
+   if fly_enabled and LocalPlayer.Character then
+      local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if root and fly_bv and fly_bg then
          local camera = workspace.CurrentCamera
          local moveDirection = Vector3.new(0, 0, 0)
          
@@ -731,44 +729,37 @@ RunService.RenderStepped:Connect(function()
          if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDirection = moveDirection + Vector3.new(0, 1, 0) end
          if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDirection = moveDirection - Vector3.new(0, 1, 0) end
          
-         if fly_bv and fly_bg then
-            fly_bg.CFrame = camera.CFrame
-            if moveDirection.Magnitude > 0 then
-               fly_bv.Velocity = moveDirection.Unit * fly_speed
-            else
-               fly_bv.Velocity = Vector3.new(0, 0, 0)
-            end
+         fly_bg.CFrame = camera.CFrame
+         if moveDirection.Magnitude > 0 then
+            fly_bv.Velocity = moveDirection.Unit * fly_speed
+         else
+            fly_bv.Velocity = Vector3.new(0, 0, 0)
          end
       end
-   end)
+   end
 end)
 
--- Click للاختيار بالماوس
+-- Click بالماوس للاختيار
 LocalPlayer:GetMouse().Button1Down:Connect(function()
-   pcall(function()
-      if (nik_enabled or bj_enabled) then
-         local mouse = LocalPlayer:GetMouse()
-         if mouse.Target then
-            local character = mouse.Target.Parent
-            local plr = Players:GetPlayerFromCharacter(character)
-            if plr and plr ~= LocalPlayer then
-               target_player = plr
-               Rayfield:Notify({Title = "Target Selected", Content = plr.Name, Duration = 2})
-            end
+   if (nik_enabled or bj_enabled) then
+      local mouse = LocalPlayer:GetMouse()
+      if mouse.Target and mouse.Target.Parent then
+         local plr = Players:GetPlayerFromCharacter(mouse.Target.Parent)
+         if plr and plr ~= LocalPlayer then
+            target_player = plr
+            Rayfield:Notify({Title = "Target Selected", Content = plr.Name, Duration = 2})
          end
       end
-   end)
+   end
 end)
 
--- 🔄 الـ Loop الذكي د الـ Nik والـ BJ مع الـ Smoud Logic الجديد
+-- Loop الـ Nik والـ BJ السلس والآمن 100%
 RunService.Heartbeat:Connect(function()
-   pcall(function()
-      if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart")
-         and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-         
-         local myRoot = LocalPlayer.Character.HumanoidRootPart
-         local enemyRoot = target_player.Character.HumanoidRootPart
-         
+   if (nik_enabled or bj_enabled) and target_player and target_player.Character and LocalPlayer.Character then
+      local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      local enemyRoot = target_player.Character:FindFirstChild("HumanoidRootPart")
+      
+      if myRoot and enemyRoot then
          local targetCFrame = nil
          if nik_enabled then
             targetCFrame = enemyRoot.CFrame * CFrame.new(0, 0, 1.2) 
@@ -778,17 +769,14 @@ RunService.Heartbeat:Connect(function()
          
          if targetCFrame then
             if nik_smoud_val == 0 then
-               -- 0 = لاصق طيارة ف البلاصة بلا Lerp ثقيل
                myRoot.CFrame = targetCFrame
             else
-               -- من 1 لـ 10 = كيبان تابعو بـ Smoud (كل ما كبر الـ رقم، كل ما زاد الـ Smoud الموزون)
-               -- تحويل القيمة لنسبة مئوية مابين 0.05 و 0.4 باش تعطي تأثير سلس للعين
                local lerpFactor = 0.4 - ((nik_smoud_val - 1) * 0.038)
                myRoot.CFrame = myRoot.CFrame:Lerp(targetCFrame, math.clamp(lerpFactor, 0.05, 0.4))
             end
          end
       end
-   end)
+   end
 end)
 
 RefreshPlayerList()
