@@ -499,17 +499,19 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 ULTRA CLEAN VERSION - FACTIONS FIXED - LOOP TELEPORT TO PLAYER (EVERY FRAME)
+-- 👑 ULTRA CLEAN VERSION - NO SEPARATORS - LOOP TP & AIMBOT LOCK (ANTI-SMOUD)
 -- =============================================================================
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
 local nik_enabled = false
 local bj_enabled = false
-local loop_tp_to_player = false -- المتغير ديال Loop Teleport الجديد
+local loop_tp_to_player = false
+local aimbot_enabled = false -- متغير الـ Aimbot الجديد
 local target_player = nil
 local selected_player = nil
 local spectating = false
@@ -563,7 +565,27 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 👥 SECTION 2: PLAYER CONTROL
+-- 🎯 SECTION 2: AIMBOT LOCK SYSTEM
+-- ==========================================
+FunTab:CreateSection("🎯 Aimbot Lock (Anti-Smoud)")
+
+FunTab:CreateKeybind({
+   Name = "Aimbot Lock Head",
+   CurrentKeybind = "Q", -- الـ Keybind ديال الـ Aimbot
+   HoldToInteract = false,
+   Info = "Locks your camera directly on the selected player's head (Anti-Smoud)",
+   Callback = function(Keybind)
+      if not selected_player then 
+         Rayfield:Notify({Title = "Aimbot Error", Content = "Select a player from the list first!", Duration = 2}) 
+         return 
+      end
+      aimbot_enabled = not aimbot_enabled
+      Rayfield:Notify({Title = "Aimbot System", Content = aimbot_enabled and "Lock: ON (Head Glued)" or "Lock: OFF", Duration = 2})
+   end,
+})
+
+-- ==========================================
+-- 👥 SECTION 3: PLAYER CONTROL
 -- ==========================================
 FunTab:CreateSection("👥 Player Control Menu")
 
@@ -594,7 +616,7 @@ end
 FunTab:CreateButton({
    Name = "🔄 Refresh Player List",
    Callback = function() RefreshPlayerList() end,
-})
+ })
 
 FunTab:CreateButton({
    Name = "👁️ Spectate / Unspectate",
@@ -632,7 +654,6 @@ FunTab:CreateButton({
    end,
 })
 
--- 🔄 الـ Button الجديد: Loop Teleport To Player (أنت كاتبقى تطير وتليپورت عندو ف كل فريم)
 FunTab:CreateButton({
    Name = "🔄 Loop Teleport To Player (Every Frame)",
    Callback = function()
@@ -661,7 +682,7 @@ FunTab:CreateButton({
 })
 
 -- ==========================================
--- ⌨️ SECTION 3: TELEPORT EXPLOITS
+-- ⌨️ SECTION 4: TELEPORT EXPLOITS
 -- ==========================================
 FunTab:CreateSection("⌨️ Teleport Exploits (Nik / BJ)")
 
@@ -691,7 +712,7 @@ FunTab:CreateKeybind({
 -- 🎮 CORE ENGINE & SAFE LOOPS (EVERY FRAME)
 -- ==========================================
 
--- Loop الـ Fly الثابت بسرعـة 300
+-- 1. Loop الـ Fly الثابت بسرعـة 300
 RunService.RenderStepped:Connect(function()
    pcall(function()
       if fly_enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
@@ -735,19 +756,29 @@ LocalPlayer:GetMouse().Button1Down:Connect(function()
    end)
 end)
 
--- 🔄 الـ Loop الأساسي المشترك (Every Frame)
+-- 🔄 الـ Loop الأساسي (RenderStepped & Heartbeat) - Anti-Smoud Lock
+RunService.RenderStepped:Connect(function()
+   pcall(function()
+      -- 1. كود الـ Aimbot Lock (كايحدث الـ Camera CFrame ف كل فريم نيشان لـ راس الـ Player بلا Smoud)
+      if aimbot_enabled and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("Head") then
+         local targetHead = selected_player.Character.Head
+         Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetHead.Position)
+      end
+   end)
+end)
+
 RunService.Heartbeat:Connect(function()
    pcall(function()
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
       if not myRoot then return end
       
-      -- 1. كود الـ Loop Teleport To Player (أنت كتمشي فوق راسو بـ 3 خطوات ف كل فريم)
+      -- 2. كود الـ Loop Teleport To Player (Every Frame)
       if loop_tp_to_player and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart") then
          local targetRoot = selected_player.Character.HumanoidRootPart
          myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
       end
       
-      -- 2. كود الـ Nik والـ BJ الأصلي (لاصق مباشر طيارة بلا Smoud)
+      -- 3. كود الـ Nik والـ BJ الأصلي (لاصق مباشر طيارة)
       if target_player and target_player.Character and target_player.Character:FindFirstChild("HumanoidRootPart") then
          local enemyRoot = target_player.Character.HumanoidRootPart
          if nik_enabled then
