@@ -499,7 +499,7 @@ HacksTab:CreateSlider({
    Callback = function(v) _G.HitboxTransparency = v end
 })
 -- =============================================================================
--- 👑 ULTRA PRO VERSION - AUTOMATIC AIMBOT (FOV 1000 + WALL CHECK + AUTO-REFRESH)
+-- 👑 FIX VERSION - WORKING AIMBOT (RAYCAST WALL CHECK) + FACTIONS BACK
 -- =============================================================================
 
 local Players = game:GetService("Players")
@@ -513,8 +513,8 @@ local bj_enabled = false
 local loop_tp_to_player = false
 local aimbot_enabled = false
 
-local target_player = nil   -- للـ Nik والـ BJ
-local selected_player = nil -- هادا هو الـ Player لّي غادي يتثبت عليه الـ Aimbot والـ Loop TP
+local target_player = nil   
+local selected_player = nil 
 
 -- متغيرات الـ Fly (سرعة ثابتة 300)
 local fly_enabled = false
@@ -522,8 +522,8 @@ local fly_speed = 300
 local fly_bv = nil
 local fly_bg = nil
 
--- إعدادات الـ Aimbot الجديدة
-local AIMBOT_FOV = 1000 -- الـ FOV اللي طلبتي
+-- إعدادات الـ Aimbot
+local AIMBOT_FOV = 1000 
 
 local FunTab = Window:CreateTab("🔥 Fun")
 
@@ -568,13 +568,13 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 🎯 SECTION 2: SMART AIMBOT LOCK
+-- 🎯 SECTION 2: SMART AIMBOT LOCK (FIXED)
 -- ==========================================
 FunTab:CreateSection("🎯 Smart Aimbot Lock")
 
 FunTab:CreateKeybind({
    Name = "Toggle Aimbot Lock",
-   CurrentKeybind = "Q", -- تفعيل الـ Aimbot أوتوماتيكياً
+   CurrentKeybind = "Q", 
    HoldToInteract = false,
    Info = "Locks onto closest player to Crosshair within 1000 FOV (Visible Only)",
    Callback = function(Keybind)
@@ -585,15 +585,80 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- 👥 SECTION 3: PLAYER CONTROL (AUTO-REFRESHED)
+-- 👥 SECTION 3: PLAYER CONTROL & FACTIONS
 -- ==========================================
-FunTab:CreateSection("👥 Player Control (Auto-Target)")
+FunTab:CreateSection("👥 Player Control Menu")
+
+local PlayerDropdown = FunTab:CreateDropdown({
+   Name = "Select Player From List",
+   Options = {}, 
+   CurrentOption = "",
+   MultipleOptions = false,
+   Callback = function(Option)
+      local target_name = type(Option) == "table" and Option[1] or Option
+      selected_player = Players:FindFirstChild(target_name)
+      if selected_player then
+         Rayfield:Notify({Title = "Target Selected", Content = "Targeting: " .. selected_player.Name, Duration = 2})
+      end
+   end,
+})
+
+local function RefreshPlayerList()
+   local player_names = {}
+   for _, plr in ipairs(Players:GetPlayers()) do
+      if plr ~= LocalPlayer then 
+         table.insert(player_names, plr.Name)
+      end
+   end
+   PlayerDropdown:Refresh(player_names, true)
+end
+
+FunTab:CreateButton({
+   Name = "🔄 Refresh Player List",
+   Callback = function() RefreshPlayerList() end,
+})
+
+FunTab:CreateButton({
+   Name = "👁️ Spectate / Unspectate",
+   Callback = function()
+      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
+      if spectating then
+         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+         end
+         spectating = false
+         Rayfield:Notify({Title = "Spectate", Content = "Stopped spectating.", Duration = 2})
+      else
+         if selected_player.Character and selected_player.Character:FindFirstChildOfClass("Humanoid") then
+            workspace.CurrentCamera.CameraSubject = selected_player.Character:FindFirstChildOfClass("Humanoid")
+            spectating = true
+            Rayfield:Notify({Title = "Spectate", Content = "Watching: " .. selected_player.Name, Duration = 2})
+         end
+      end
+   end,
+})
+
+FunTab:CreateButton({
+   Name = "📍 Teleport To Player",
+   Callback = function()
+      if not selected_player then Rayfield:Notify({Title = "Error", Content = "Select a player first!", Duration = 2}) return end
+      local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      local targetRoot = selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart")
+      
+      if myRoot and targetRoot then
+         myRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 3, 0)
+         Rayfield:Notify({Title = "Teleport", Content = "Teleported to " .. selected_player.Name, Duration = 2})
+      else
+         Rayfield:Notify({Title = "Error", Content = "Target player is not spawned!", Duration = 2})
+      end
+   end,
+})
 
 FunTab:CreateButton({
    Name = "🔄 Loop Teleport To Player (Every Frame)",
    Callback = function()
-      if not selected_player then 
-         Rayfield:Notify({Title = "Error", Content = "No visible target found nearby to teleport to!", Duration = 2}) 
+      if not selected_player and not aimbot_enabled then 
+         Rayfield:Notify({Title = "Error", Content = "Select a player or enable Aimbot first!", Duration = 2}) 
          return 
       end
       loop_tp_to_player = not loop_tp_to_player
@@ -647,27 +712,42 @@ FunTab:CreateKeybind({
 })
 
 -- ==========================================
--- ⚙️ HELPER FUNCTIONS (SMART TARGETING)
+-- ⚙️ HELPER FUNCTIONS (RAYCAST WALL CHECK)
 -- ==========================================
 
--- دالة للتأكد واش اللعاب باين قدامك (Wall Check)
+-- دالة الـ Wall Check الحقيقية والناجحة بـ Raycast
 local function IsPlayerVisible(targetChar)
-   if not targetChar or not targetChar:FindFirstChild("Head") then return false end
-   local head = targetChar.Head
-   local parts = Camera:GetPartsObscuredByLetters({Camera.CFrame.Position, head.Position}, {LocalPlayer.Character, targetChar})
-   return #parts == 0
+   if not targetChar or not targetChar:FindFirstChild("Head") or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then 
+      return false 
+   end
+   
+   local startPos = Camera.CFrame.Position
+   local endPos = targetChar.Head.Position
+   local direction = endPos - startPos
+   
+   local raycastParams = RaycastParams.new()
+   raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+   raycastParams.FilterDescendantsInstances = {LocalPlayer.Character, targetChar, Camera}
+   raycastParams.IgnoreWater = true
+   
+   local raycastResult = workspace:Raycast(startPos, direction, raycastParams)
+   
+   -- يلا مالقى حتى شي حيط ف الطريق يعني اللعاب باين قدامك 100%
+   if not raycastResult then
+      return true
+   end
+   return false
 end
 
--- دالة للبحث التلقائي على أقرب واحد للـ Crosshair مع الـ FOV والـ Wall Check والـ Auto-Refresh
+-- دالة البحث التلقائي على أقرب واحد للـ Crosshair مع الـ Auto-Refresh
 local function GetClosestPlayerToCrosshair()
    local closestPlr = nil
    local shortestDistance = AIMBOT_FOV
 
-   -- الـ Auto-Refresh كايوقع هنا حيت كايقرا الـ Players:GetPlayers() نيشان ف كل فريم
    for _, plr in ipairs(Players:GetPlayers()) do
       if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChildOfClass("Humanoid") then
          if plr.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-            -- الـ Wall Check: واش اللعاب باين؟
+            -- الـ Wall Check بالـ Raycast الجديد
             if IsPlayerVisible(plr.Character) then
                local headPos, onScreen = Camera:WorldToViewportPoint(plr.Character.Head.Position)
                if onScreen then
@@ -717,7 +797,7 @@ RunService.RenderStepped:Connect(function()
    end)
 end)
 
--- Click للاختيار بالماوس (خاص فقط بالـ Nik والـ BJ)
+-- Click للاختيار بالماوس (خاص بالـ Nik والـ BJ)
 LocalPlayer:GetMouse().Button1Down:Connect(function()
    pcall(function()
       if (nik_enabled or bj_enabled) then
@@ -737,12 +817,13 @@ end)
 -- 🔄 الـ Loop الأساسي (RenderStepped & Heartbeat)
 RunService.RenderStepped:Connect(function()
    pcall(function()
-      -- تحديث الهدف تلقائياً ف كل فريم (Auto-Refresh + Close to Crosshair)
-      if aimbot_enabled or loop_tp_to_player then
-         selected_player = GetClosestPlayerToCrosshair()
+      -- إذا كان الـ Aimbot شغال كايقلب أوتوماتيكيا على أقرب واحد باين
+      if aimbot_enabled then
+         local pl = GetClosestPlayerToCrosshair()
+         if pl then selected_player = pl end
       end
 
-      -- كود الـ Aimbot Lock المباشر بلا Smoud
+      -- كود الـ Aimbot Lock اللصقة الحقيقية ف الراس (Anti-Smoud)
       if aimbot_enabled and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("Head") then
          Camera.CFrame = CFrame.new(Camera.CFrame.Position, selected_player.Character.Head.Position)
       end
@@ -754,7 +835,7 @@ RunService.Heartbeat:Connect(function()
       local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
       if not myRoot then return end
       
-      -- كود الـ Loop Teleport To Player التلقائي (أنت كاطير فوق راسو ف كل فريم)
+      -- كود الـ Loop Teleport To Player (أنت كاطير فوق راسو)
       if loop_tp_to_player and selected_player and selected_player.Character and selected_player.Character:FindFirstChild("HumanoidRootPart") then
          myRoot.CFrame = selected_player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 3, 0)
       end
@@ -770,6 +851,8 @@ RunService.Heartbeat:Connect(function()
       end
    end)
 end)
+
+RefreshPlayerList()
 
 
 local SettingsTab = Window:CreateTab("⚙ Settings")
