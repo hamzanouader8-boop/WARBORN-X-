@@ -856,53 +856,34 @@ RefreshPlayerList()
 
 
 -- ==========================================
--- 🛠️ SERVICES & CONFIG
+-- 👑 FINAL BOSS SCRIPT: FULL INTEGRATION
 -- ==========================================
-local VirtualUser = game:GetService("VirtualUser")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
 local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
 
 getgenv().AntiAFK = false
+getgenv().TeamCheck = true -- Default ON
 
--- الـ Logic ديال الـ Anti-AFK
+-- 🛡️ Anti-AFK Logic
 LocalPlayer.Idled:Connect(function()
     if getgenv().AntiAFK then
         VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
         task.wait(1)
         VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-        
-        StarterGui:SetCore("SendNotification", {
-            Title = "Anti-AFK",
-            Text = "AFK Prevention Triggered!",
-            Duration = 3
-        })
     end
 end)
 
--- ==========================================
--- 🛡️ SETTINGS TAB (UI BUILDER)
--- ==========================================
-local SettingsTab = Window:CreateTab("🛡️ Anti-AFK & System")
+-- 🛡️ UI BUILDER
+local SettingsTab = Window:CreateTab("🛡️ Final Boss Controls")
 
-SettingsTab:CreateSection("Anti-AFK Controller")
-
+SettingsTab:CreateSection("Anti-AFK & Teams")
 SettingsTab:CreateToggle({
     Name = "Enable Anti-AFK",
     CurrentValue = false,
-    Callback = function(v) 
-        getgenv().AntiAFK = v 
-        if v then
-            StarterGui:SetCore("SendNotification", {
-                Title = "System",
-                Text = "Anti-AFK Activated",
-                Duration = 3
-            })
-        end
-    end
+    Callback = function(v) getgenv().AntiAFK = v end
 })
-
-SettingsTab:CreateSection("Game Settings")
 
 SettingsTab:CreateToggle({
     Name = "Team/Faction Check",
@@ -910,17 +891,41 @@ SettingsTab:CreateToggle({
     Callback = function(v) getgenv().TeamCheck = v end
 })
 
-SettingsTab:CreateSection("Information")
+-- 💥 TROLL SECTION
+SettingsTab:CreateSection("Player Troll (Select Target First)")
 
-SettingsTab:CreateParagraph({
-    Title = "Keys",
-    Content = "LeftShift: Speed On/Off | E: Fly On/Off"
+local TargetDropdown = SettingsTab:CreateDropdown({
+    Name = "Target Player",
+    Options = {},
+    Callback = function(Option) getgenv().SelectedTarget = Players:FindFirstChild(Option) end
 })
 
-SettingsTab:CreateParagraph({
-    Title = "Credits",
-    Content = "Fripon 🔥 | Fixed | WARBORN"
+-- تحديث قائمة اللاعبين
+SettingsTab:CreateButton({
+    Name = "🔄 Refresh Players",
+    Callback = function()
+        local list = {}
+        for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(list, p.Name) end end
+        TargetDropdown:Refresh(list, true)
+    end
 })
+
+-- زر الـ Troll (يجبد الشخصية ويطيرها للفوق)
+SettingsTab:CreateButton({
+    Name = "🌪️ Smash/Troll Selected",
+    Callback = function()
+        local target = getgenv().SelectedTarget
+        if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+            local root = target.Character.HumanoidRootPart
+            -- تطبيق القوة
+            root.Velocity = Vector3.new(0, 1000, 0) -- يطير للسما
+            root.RotVelocity = Vector3.new(999, 999, 999) -- كيدور بحال المروحة
+            StarterGui:SetCore("SendNotification", {Title = "Troll", Text = "Smashed " .. target.Name, Duration = 2})
+        end
+    end
+})
+
+SettingsTab:CreateParagraph({Title="Credits", Content="Fripon 🔥 | Fixed | WARBORN"})
 
 Rayfield:Notify({
    Title = "Loaded Fripon!",
