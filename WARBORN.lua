@@ -878,8 +878,8 @@ LocalPlayer.Idled:Connect(function()
 end)
 
 -- بناء الـ UI (باستخدام الـ Library ديالك)
-local Window = ... -- (هنا كيكون التعريف ديال الـ Library ديالك)
-local SettingsTab = Window:CreateTab("⚙ Settings")
+local Window = Rayfield:CreateWindow({Name = "Final Boss Tool", ...}) -- تأكد من هاد السطر
+local SettingsTab = Window:CreateTab("⚙ Settings") -- هادي خاصها تكون مورا الـ Window 
 
 -- الـ Toggles
 SettingsTab:CreateToggle({
