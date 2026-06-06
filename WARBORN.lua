@@ -855,21 +855,24 @@ end)
 RefreshPlayerList()
 
 
--- تعريف الـ Services
+-- ==========================================
+-- 🛠️ SERVICES & CONFIG
+-- ==========================================
 local VirtualUser = game:GetService("VirtualUser")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
 
--- الـ Logic ديال الـ Anti-AFK
 getgenv().AntiAFK = false
 
+-- الـ Logic ديال الـ Anti-AFK
 LocalPlayer.Idled:Connect(function()
     if getgenv().AntiAFK then
         VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
         task.wait(1)
         VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
         
-        game:GetService("StarterGui"):SetCore("SendNotification", {
+        StarterGui:SetCore("SendNotification", {
             Title = "Anti-AFK",
             Text = "AFK Prevention Triggered!",
             Duration = 3
@@ -877,24 +880,20 @@ LocalPlayer.Idled:Connect(function()
     end
 end)
 
--- بناء الـ UI (باستخدام الـ Library ديالك)
-local Window = Rayfield:CreateWindow({Name = "Final Boss Tool", ...}) -- تأكد من هاد السطر
-local SettingsTab = Window:CreateTab("⚙ Settings") -- هادي خاصها تكون مورا الـ Window 
+-- ==========================================
+-- 🛡️ SETTINGS TAB (UI BUILDER)
+-- ==========================================
+local SettingsTab = Window:CreateTab("🛡️ Anti-AFK & System")
 
--- الـ Toggles
-SettingsTab:CreateToggle({
-    Name="Team/Faction Check",
-    CurrentValue=true,
-    Callback=function(v) getgenv().TeamCheck=v end
-})
+SettingsTab:CreateSection("Anti-AFK Controller")
 
 SettingsTab:CreateToggle({
-    Name="Anti-AFK",
-    CurrentValue=false,
-    Callback=function(v) 
+    Name = "Enable Anti-AFK",
+    CurrentValue = false,
+    Callback = function(v) 
         getgenv().AntiAFK = v 
         if v then
-            game:GetService("StarterGui"):SetCore("SendNotification", {
+            StarterGui:SetCore("SendNotification", {
                 Title = "System",
                 Text = "Anti-AFK Activated",
                 Duration = 3
@@ -903,9 +902,25 @@ SettingsTab:CreateToggle({
     end
 })
 
--- الـ Paragraphs
-SettingsTab:CreateParagraph({Title="Keys",Content="LeftShift: Speed On/Off | E: Fly On/Off"})
-SettingsTab:CreateParagraph({Title="Credits",Content="Fripon 🔥 | Fixed | WARBORN"})
+SettingsTab:CreateSection("Game Settings")
+
+SettingsTab:CreateToggle({
+    Name = "Team/Faction Check",
+    CurrentValue = true,
+    Callback = function(v) getgenv().TeamCheck = v end
+})
+
+SettingsTab:CreateSection("Information")
+
+SettingsTab:CreateParagraph({
+    Title = "Keys",
+    Content = "LeftShift: Speed On/Off | E: Fly On/Off"
+})
+
+SettingsTab:CreateParagraph({
+    Title = "Credits",
+    Content = "Fripon 🔥 | Fixed | WARBORN"
+})
 
 Rayfield:Notify({
    Title = "Loaded Fripon!",
