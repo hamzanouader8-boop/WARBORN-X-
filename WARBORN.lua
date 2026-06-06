@@ -855,13 +855,60 @@ end)
 RefreshPlayerList()
 
 
+-- تعريف الـ Services
+local VirtualUser = game:GetService("VirtualUser")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- الـ Logic ديال الـ Anti-AFK
+getgenv().AntiAFK = false
+
+LocalPlayer.Idled:Connect(function()
+    if getgenv().AntiAFK then
+        VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Anti-AFK",
+            Text = "AFK Prevention Triggered!",
+            Duration = 3
+        })
+    end
+end)
+
+-- بناء الـ UI (باستخدام الـ Library ديالك)
+local Window = ... -- (هنا كيكون التعريف ديال الـ Library ديالك)
 local SettingsTab = Window:CreateTab("⚙ Settings")
-SettingsTab:CreateToggle({Name="Team/Faction Check",CurrentValue=true,Callback=function(v) getgenv().TeamCheck=v end})
+
+-- الـ Toggles
+SettingsTab:CreateToggle({
+    Name="Team/Faction Check",
+    CurrentValue=true,
+    Callback=function(v) getgenv().TeamCheck=v end
+})
+
+SettingsTab:CreateToggle({
+    Name="Anti-AFK",
+    CurrentValue=false,
+    Callback=function(v) 
+        getgenv().AntiAFK = v 
+        if v then
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "System",
+                Text = "Anti-AFK Activated",
+                Duration = 3
+            })
+        end
+    end
+})
+
+-- الـ Paragraphs
 SettingsTab:CreateParagraph({Title="Keys",Content="LeftShift: Speed On/Off | E: Fly On/Off"})
-SettingsTab:CreateParagraph({Title="Credits",Content="Nouader 🔥 | Fixed Box 2025 | WARBORN/Emergency Hamburg"})
+SettingsTab:CreateParagraph({Title="Credits",Content="Fripon 🔥 | Fixed | WARBORN"})
 
 Rayfield:Notify({
-   Title = "Loaded 5oya!",
+   Title = "Loaded Fripon!",
    Content = "v3 Fixed Box on Enemy + Top Tracers + All Features 🔥",
    Duration = 6
 })
